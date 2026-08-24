@@ -19,6 +19,7 @@ export interface IUser extends Document {
   privacyAccepted: boolean;
   privacyAcceptedAt: Date;
   privacyVersion: string;
+  lastLogin: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +71,13 @@ const userSchema: Schema = new Schema({
   privacyVersion: {
     type: String,
     default: 'v1.0-2026-03'
+  },
+  lastLogin: {
+    // Reference date for the retention policy declared in the privacy notice:
+    // accounts with no access for 24 months are deleted. Set at registration so
+    // an account that is never used again still has a starting point.
+    type: Date,
+    default: Date.now
   }
 }, {
   // Automatic lifecycle tracking: createdAt and updatedAt timestamps

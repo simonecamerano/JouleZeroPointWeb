@@ -48,7 +48,7 @@ const goBack = () => {
       <footer class="terminal-footer">
         <p class="transparency-note">
           <span class="shield-icon">🛡️</span>
-          Interfaccia Automata: Stai interagendo con un'AI (OpenAI). Le conversazioni sono monitorate per sicurezza e conformità legale.
+          Interfaccia Automata: stai interagendo con un'intelligenza artificiale, non con una persona. Il modello è fornito da Anthropic, a cui il testo che scrivi viene inviato. La conversazione resta salvata nel tuo profilo per dare contesto alle risposte successive.
         </p>
       </footer>
     </div>

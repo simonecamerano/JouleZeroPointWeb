@@ -6,7 +6,7 @@
   <div class="legal-view fade-in">
     <h1 class="glitch-text" data-text="PRIVACY POLICY">INFORMATIVA PRIVACY</h1>
     <div class="glass-panel legal-content">
-      <p class="last-updated">Ultimo aggiornamento: 21 Aprile 2026</p>
+      <p class="last-updated">Ultimo aggiornamento: 24 Agosto 2026</p>
 
       <div class="controller-info">
         <strong>Titolare del Trattamento:</strong> Simone Camerano, Gradara
@@ -22,18 +22,26 @@
         mantenimento dell'identità del Costruttore: indirizzo e-mail, pseudonimo
         utente (username), password (inequivocabilmente cifrata) e la metrica di
         gioco (mazzi creati, cronologia esportazione in TTS o PDF).
-        <strong>Il servizio non è destinato a minori di 14 anni e non raccogliamo
-          consapevolmente dati da tali soggetti.</strong>
+        <strong>Il servizio non è destinato a minori di 18 anni e non raccogliamo
+          consapevolmente dati da tali soggetti.</strong> La soglia è fissata a 18
+        anni perché il Terminale usa un modello linguistico il cui fornitore
+        richiede la maggiore età per l'utilizzo del servizio.
       </p>
 
       <h2>2. Finalità di Computazione e Trattamento</h2>
       <p>
-        I dati anagrafici forniti vengono utilizzati unicamente per
-        l'autenticazione biometrica-digitale al database dell'applicazione.
-        Nessun dato è raccolto forzatamente al di fuori di quelli
-        consenzientemente inseriti. Registriamo log di errore limitati solo al
-        fine di evitare i crash della Matrice e tutelare l'integrità temporale
-        del software.
+        L'indirizzo e-mail e la password servono unicamente ad autenticare
+        l'accesso all'account: non raccogliamo dati biometrici e non usiamo
+        alcuna forma di riconoscimento fisico. Nessun dato è raccolto al di
+        fuori di quelli che inserisci tu. Registriamo log di errore limitati al
+        solo scopo di individuare i malfunzionamenti.
+      </p>
+      <p>
+        Se usi il <strong>Terminale Punto Zero</strong>, il testo che scrivi e le
+        risposte ricevute vengono conservati nel tuo profilo, per dare al
+        Terminale il contesto delle domande precedenti, e inviati al fornitore
+        del modello linguistico indicato al punto 7. La base giuridica di questo
+        trattamento è l'esecuzione del servizio che hai richiesto.
       </p>
 
       <h2>3. Sicurezza, Cifratura e Archiviazione</h2>
@@ -46,9 +54,12 @@
 
       <h2>4. Conservazione Temporale (Retention)</h2>
       <p>
-        L'identità del Costruttore e i dati associati rimarranno innestati nella
-        Matrice finché esisterà l'account. Su richiesta di eliminazione (Diritto
-        all'Oblio), i dati dell'account verranno fisicamente distrutti. Alcune
+        L'account e i dati associati restano finché l'account esiste, e in ogni
+        caso non oltre <strong>24 mesi dall'ultimo accesso</strong>: superato
+        quel termine, account, conversazioni del Terminale e mazzi creati
+        vengono cancellati automaticamente. Su richiesta di eliminazione
+        (Diritto all'Oblio) la cancellazione è immediata e comprende anche le
+        conversazioni del Terminale. Alcune
         creazioni originariamente impostate su "Pubbliche", qualora clonate da
         altri giocatori, potrebbero perdere l'ancoraggio al nome utente
         originale ma restare sotto forma algoritmica anonimizzata in base alla
@@ -61,7 +72,10 @@
         segretamente a terze corporazioni i frammenti della tua identità.
         Condivisioni tecniche avvengono unicamente con l'infrastruttura di
         hosting e database sottostante strettamente necessaria a erogare l'app
-        in server protetti. I prompt inviati al Terminale vengono elaborati in forma anonimizzata ove possibile.
+        in server protetti. Quanto scrivi nel Terminale viene inviato al
+        fornitore del modello linguistico così come lo scrivi, insieme al tuo
+        pseudonimo: non è anonimizzato, ed è la ragione per cui ti chiediamo di
+        non inserirvi dati personali.
       </p>
 
       <h2>6. I tuoi Diritti da Costruttore (Protocollo GDPR)</h2>
@@ -79,28 +93,49 @@
       </p>
       <ul class="data-nodes-list">
         <li>
-          <strong>OpenAI</strong>: Elaborazione dei modelli linguistici per il Terminale AI (GPAI compliance).
+          <strong>Anthropic PBC</strong> (Stati Uniti): modello linguistico del
+          Terminale Punto Zero. Riceve il testo che scrivi nel Terminale e il tuo
+          pseudonimo. Il trasferimento fuori dall'Unione Europea si regge sulle
+          clausole contrattuali standard approvate dalla Commissione Europea
+          (Art. 46 GDPR).
         </li>
         <li>
-          <strong>DigitalOcean</strong>: Hosting del Nucleo Backend su server
-          dedicato in UE.
+          <strong>Hetzner Online GmbH</strong> (Germania): server che consegna le
+          pagine che stai leggendo e fa funzionare l'API del gioco.
         </li>
         <li>
-          <strong>Cloudinary</strong>: Deposito persistente per gli artefatti
-          visivi delle news.
+          <strong>MongoDB Atlas</strong> (cluster a Francoforte): database che
+          contiene account, mazzi e conversazioni del Terminale. MongoDB, Inc. è
+          società statunitense: i dati restano nell'Unione Europea, ed eventuali
+          trasferimenti si reggono sulle clausole contrattuali standard.
         </li>
         <li>
-          <strong>Brevo (Sendinblue)</strong>: Gateway per le trasmissioni email
-          di attivazione.
+          <strong>Cloudinary</strong>: archivio delle immagini delle news.
         </li>
         <li>
-          <strong>Google Cloud</strong>: Sincronizzazione delle Lore (Data Matrix).
+          <strong>Brevo (Sendinblue)</strong>: invio delle email di attivazione
+          dell'account.
+        </li>
+        <li>
+          <strong>Google</strong>: il catalogo delle carte è mantenuto su un
+          foglio di calcolo condiviso. Contiene solo dati di gioco, nessun dato
+          personale degli utenti.
         </li>
       </ul>
 
       <h2>8. Intelligenza Artificiale e Trasparenza (EU AI Act)</h2>
       <p>
-        In conformità con il Regolamento UE 2024/1689 (AI Act), informiamo che il <strong>Terminale Punto Zero</strong> è un sistema di intelligenza artificiale generativa. Le interazioni sono finalizzate all'assistenza di gioco e alla narrazione. Il sistema è progettato per minimizzare la raccolta di dati personali durante il dialogo; si invita tuttavia l'utente a non inserire informazioni sensibili nei prompt di comando.
+        In conformità con il Regolamento UE 2024/1689 (AI Act), ti informiamo
+        che il <strong>Terminale Punto Zero</strong> è un sistema di intelligenza
+        artificiale generativa: quando lo usi stai interagendo con un modello
+        linguistico, non con una persona, e questo è indicato nell'interfaccia
+        del Terminale stesso. Le interazioni servono all'assistenza di gioco e
+        alla narrazione. Le risposte possono contenere errori e non vanno
+        considerate informazioni verificate. Nessuna persona legge le tue
+        conversazioni per sorvegliarle: sono conservate per dare contesto alle
+        risposte successive e sottoposte a controlli automatici contro gli abusi.
+        Ti chiediamo comunque di non inserire dati personali nei comandi, perché
+        il testo viene inviato al fornitore del modello.
       </p>
 
       <h2>9. Cookie e Marcatura Temporale (Session Management)</h2>
@@ -130,7 +165,13 @@
 
       <h2>11. Trasferimento Dati Extra-UE</h2>
       <p>
-        Alcuni trattamenti (es. OpenAI, Google Cloud) avvengono su server situati negli Stati Uniti. Tali trasferimenti avvengono sulla base delle <strong>Clausole Contrattuali Standard (SCC)</strong> approvate dalla Commissione Europea e in conformità con il Data Privacy Framework, garantendo un livello di protezione adeguato agli standard UE.
+        Alcuni fornitori indicati al punto 7 sono società statunitensi: Anthropic,
+        che elabora il testo del Terminale, MongoDB, Inc., che gestisce il
+        database, e Google, che ospita il foglio con i dati delle carte. Questi
+        trasferimenti si reggono sulle <strong>clausole contrattuali standard</strong>
+        approvate dalla Commissione Europea (Art. 46 GDPR). Il server che consegna
+        il sito e fa funzionare il gioco è in Germania, e il cluster del database
+        è a Francoforte: i dati del tuo account restano quindi nell'Unione Europea.
       </p>
     </div>
   </div>

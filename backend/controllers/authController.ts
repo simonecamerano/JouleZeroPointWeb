@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User, { IUser } from '../models/User';
 import Deck from '../models/Deck';
+import Message from '../models/Message';
 import logger from '../config/logger';
 import * as emailService from '../services/emailService';
 
@@ -137,6 +138,12 @@ export const loginUser = async (req: Request, res: Response) => {
         .json({ error: "Account non verificato. Reinvia l'email di attivazione." });
     }
 
+    // Retention clock: the inactivity purge counts from this date, so it has to
+    // be written on every successful access. Failing to record it must not block
+    // the login, hence the awaited update is kept outside the response payload.
+    user.lastLogin = new Date();
+    await user.save();
+
     res.json({
       id: user._id,
       username: user.usernameDisplay || user.username,
@@ -165,6 +172,12 @@ export const deleteAccount = async (req: any, res: Response) => {
       // Purge associated decks
       const deckResult = await Deck.deleteMany({ creator: usernameLower });
       logger.info(`VIGIL_SYSTEM: ${deckResult.deletedCount} deck artifacts for ${user.username} have been purged.`);
+
+      // Purge the terminal conversation. Until 2026-08-24 these messages
+      // survived the deletion of the account they belonged to, which left
+      // personal data behind after an erasure request.
+      const messageResult = await Message.deleteMany({ userId: user._id });
+      logger.info(`VIGIL_SYSTEM: ${messageResult.deletedCount} terminal messages for ${user.username} have been purged.`);
 
       // Also remove user votes from other creators' decks
       await Deck.updateMany({}, { $pull: { votes: user.username } });

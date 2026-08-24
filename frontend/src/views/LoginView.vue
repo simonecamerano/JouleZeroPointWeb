@@ -177,7 +177,7 @@ const submitForm = async () => {
             <span class="label-text">
               Accetto i
               <RouterLink to="/terms" target="_blank">Termini di Utilizzo</RouterLink>
-              e confermo di avere più di 14 anni. Ho letto l'
+              e confermo di avere più di 18 anni. Ho letto l'
               <RouterLink to="/privacy" target="_blank">Informativa Privacy</RouterLink>.
             </span>
           </label>

@@ -3,14 +3,18 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const mongoose = require('mongoose');
 const { getCachedCards } = require('../services/cardService');
 const Card = require('../models/Card');
-const { generateEmbedding } = require('../services/embeddingService');
 const logger = require('../config/logger');
 const connectDB = require('../config/db');
 
-const syncEmbeddings = async () => {
+// Importa dal foglio sorgente le carte che non sono ancora nel database.
+// Fino al 2026-08-24 questo script calcolava anche un vettore per ogni carta
+// tramite un fornitore esterno: la ricerca semantica che li usava e' stata
+// rimossa, quindi non vengono piu' generati. Il campo resta nello schema con i
+// valori storici, che nessuno legge.
+const syncCards = async () => {
     try {
         await connectDB();
-        logger.info('SISTEMA_VIGILE: Inizio sincronizzazione vettoriale delle carte...');
+        logger.info('SISTEMA_VIGILE: Inizio sincronizzazione delle carte...');
 
         const sheetCards = await getCachedCards();
         let updatedCount = 0;
@@ -18,12 +22,9 @@ const syncEmbeddings = async () => {
         for (const sCard of sheetCards) {
             let dbCard = await Card.findOne({ cardId: sCard.id });
 
-            const cardText = `${sCard.name}. ${sCard.type}. ${sCard.role}. Effect: ${sCard.effect}`;
-            
             if (!dbCard) {
-                logger.info(`NEW_VECTOR: Generazione embedding per "${sCard.name}"...`);
-                const embedding = await generateEmbedding(cardText);
-                
+                logger.info(`NUOVA_CARTA: Inserimento di "${sCard.name}"...`);
+
                 await Card.create({
                     cardId: sCard.id,
                     name: sCard.name,
@@ -35,15 +36,8 @@ const syncEmbeddings = async () => {
                     rarity: sCard.rarity,
                     effect: sCard.effect,
                     role: sCard.role,
-                    image_url: sCard.image_url,
-                    embedding
+                    image_url: sCard.image_url
                 });
-                updatedCount++;
-            } else if (!dbCard.embedding || dbCard.embedding.length === 0) {
-                logger.info(`UPDATE_VECTOR: Aggiunta embedding mancante per "${sCard.name}"...`);
-                const embedding = await generateEmbedding(cardText);
-                dbCard.embedding = embedding;
-                await dbCard.save();
                 updatedCount++;
             }
         }
@@ -51,9 +45,9 @@ const syncEmbeddings = async () => {
         logger.info(`SINCRONIZZAZIONE_COMPLETATA: ${updatedCount} carte aggiornate con successo.`);
         process.exit(0);
     } catch (error) {
-        logger.error(`ERRORE_SYNC_VETTORIALE: ${error.message}`);
+        logger.error(`ERRORE_SYNC_CARTE: ${error.message}`);
         process.exit(1);
     }
 };
 
-syncEmbeddings();
+syncCards();

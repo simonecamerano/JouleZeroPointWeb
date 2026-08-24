@@ -29,7 +29,7 @@
   <img src="https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
   <img src="https://img.shields.io/badge/Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" alt="OpenAI" />
+  <img src="https://img.shields.io/badge/Anthropic-D4A27F?style=flat-square&logo=anthropic&logoColor=white" alt="Anthropic" />
   <img src="https://img.shields.io/badge/License-UNLICENSED-red.svg?style=flat-square" alt="License" />
 </p>
 
@@ -138,7 +138,7 @@ npm run dev
 ### Backend
 - **Runtime:** Node.js & Express
 - **Database:** MongoDB Atlas (Mongoose ODM)
-- **AI Engine:** OpenAI SDK (Neural Terminal)
+- **AI Engine:** Anthropic SDK (Neural Terminal)
 - **Security:** Helmet, Rate Limiter, CORS, NoSQL Injection Sanitizer
 - **Infrastructure:** Docker & Docker Compose
 
@@ -152,7 +152,7 @@ Copy `backend/.env.example` to `backend/.env` and fill in the required values:
 |---|---|
 | `JWT_SECRET` | Secret key for signing JWTs |
 | `MONGODB_URI` | MongoDB Atlas connection string |
-| `OPENAI_API_KEY` | OpenAI API key for the AI Terminal |
+| `ANTHROPIC_API_KEY` | Anthropic API key for the AI Terminal |
 | `SMTP_HOST / USER / PASS` | SMTP credentials for transactional email |
 
 ---
@@ -161,8 +161,8 @@ Copy `backend/.env.example` to `backend/.env` and fill in the required values:
 
 | Layer | Platform |
 |---|---|
-| Frontend | Vercel (Production) |
-| Backend | DigitalOcean / Private VPS |
+| Frontend | Hetzner via Coolify, same container as the API |
+| Backend | Hetzner via Coolify (Falkenstein, Germany) |
 | Database | MongoDB Atlas |
 
 ---

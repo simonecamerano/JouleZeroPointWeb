@@ -1,0 +1,59 @@
+# Produzione su Coolify. Il compose in docker-compose.yml resta quello di
+# sviluppo locale: monta un MongoDB nel container ed espone le porte sulla
+# macchina, cose che qui non servono e non vanno fatte.
+#
+# Perche' due servizi e non uno: nginx serve i file statici con gli header di
+# cache giusti (immutable sugli asset con hash, no-store su index.html, che per
+# una PWA con service worker non e' un dettaglio) e fa da proxy di /api verso il
+# backend. Frontend e API stanno quindi sullo stesso dominio, senza CORS e senza
+# che nessun terzo consegni le pagine.
+#
+# Il nome "backend" e' il nome del servizio dentro la rete del compose, quindi e'
+# stabile: nginx.conf lo usa gia' in proxy_pass. I nomi dei container creati da
+# Coolify per le singole risorse cambiano a ogni deploy e non sarebbero usabili.
+#
+# Il dominio va assegnato al servizio "frontend" nell'interfaccia di Coolify.
+# VITE_API_URL non va impostata: il codice usa /api/v1 come percorso relativo
+# quando la variabile manca, che e' esattamente cio' che serve sulla stessa
+# origine.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - CLOUDINARY_URL=${CLOUDINARY_URL}
+      - SHEETS_URL=${SHEETS_URL}
+      - FRONTEND_URL=https://www.joulezeropoint.com
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
