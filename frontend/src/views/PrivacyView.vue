@@ -114,7 +114,12 @@
         </li>
         <li>
           <strong>Brevo (Sendinblue)</strong>: invio delle email di attivazione
-          dell'account.
+          dell'account e dei messaggi inviati dal modulo contatti.
+        </li>
+        <li>
+          <strong>IONOS</strong>: casella di posta del dominio, dove restano
+          conservate le email che ci scrivi, comprese quelle del modulo contatti,
+          e le eventuali risposte.
         </li>
         <li>
           <strong>Google</strong>: il catalogo delle carte è mantenuto su un
