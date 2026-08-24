@@ -48,7 +48,9 @@ services:
     expose:
       - "3000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      # 127.0.0.1 e non localhost: dentro il container localhost risolve prima
+      # su ::1, e un servizio in ascolto solo su IPv4 rifiuta la connessione.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,7 +65,11 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      # Deve essere 127.0.0.1: la direttiva "listen 80" di nginx ascolta solo su
+      # IPv4, mentre localhost dentro il container risolve prima su ::1, quindi il
+      # controllo falliva con "Connection refused" su un container funzionante.
+      # Traefik esclude i container non sani, quindi il sito rispondeva 503.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       retries: 3
