@@ -10,6 +10,36 @@ import {
 } from "../utils/newsCategory";
 import { resolveNewsImage } from "../utils/imageResolver";
 
+/**
+ * NewsDetail Data Structure
+ * Comprehensive model for individual news entries.
+ */
+type NewsDetail = {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string;
+  content: string; // Markdown or plain text content
+  category: NewsCategory;
+  imageUrl: string;
+  sourceUrl: string;
+  publishedAt: string;
+  isFeatured: boolean;
+  featuredOrder: number | null;
+};
+
+// Global Orchestration: Routing & State
+const route = useRoute();
+const news = ref<NewsDetail | null>(null);
+const isLoading = ref(true);
+const errorMessage = ref("");
+
+// SEO Optimization: Dynamic News & Lore Metadata.
+// Must come after the refs it reads: these computed getters touch news.value,
+// and unhead evaluates them while the component is setting up. Declared above
+// the refs, as it was until 2026-08-25, the getter runs while `news` is still
+// in its temporal dead zone and the whole view dies with "Cannot access 'n'
+// before initialization", leaving the page shell without the article.
 // SEO Optimization: Dynamic News & Lore Metadata
 useHead({
   title: computed(() => news.value ? `${news.value.title} - Joule News` : "Caricamento News..."),
@@ -36,30 +66,6 @@ useHead({
     },
   ],
 });
-
-/**
- * NewsDetail Data Structure
- * Comprehensive model for individual news entries.
- */
-type NewsDetail = {
-  id: number;
-  slug: string;
-  title: string;
-  summary: string;
-  content: string; // Markdown or plain text content
-  category: NewsCategory;
-  imageUrl: string;
-  sourceUrl: string;
-  publishedAt: string;
-  isFeatured: boolean;
-  featuredOrder: number | null;
-};
-
-// Global Orchestration: Routing & State
-const route = useRoute();
-const news = ref<NewsDetail | null>(null);
-const isLoading = ref(true);
-const errorMessage = ref("");
 
 /**
  * Date Localization Bridge
