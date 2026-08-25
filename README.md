@@ -164,6 +164,19 @@ Copy `backend/.env.example` to `backend/.env` and fill in the required values:
 | Frontend | Hetzner via Coolify, same container as the API |
 | Backend | Hetzner via Coolify (Falkenstein, Germany) |
 | Database | MongoDB Atlas |
+| News images | Docker volume `joule-news-images`, mounted at `/app/public/news` |
+
+### News images
+
+Images uploaded from the editorial dashboard are stored on this server and served
+from `/news`, not from a third-party CDN: an external host would see the IP
+address of every visitor reading an article.
+
+They live in a Docker volume declared in `docker-compose.prod.yml`. Since no
+backup runs on the host, the copies committed under `backend/public/news-seed/`
+are the backup: at boot the server copies into the volume any file that is not
+already there, never overwriting one that is. To remove an image for good,
+delete it from the repository as well, or the next boot puts it back.
 
 ---
 
