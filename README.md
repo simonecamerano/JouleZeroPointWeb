@@ -165,6 +165,22 @@ Copy `backend/.env.example` to `backend/.env` and fill in the required values:
 | Backend | Hetzner via Coolify (Falkenstein, Germany) |
 | Database | MongoDB Atlas |
 
+### Data retention
+
+The privacy notice promises that accounts inactive for 24 months are deleted,
+together with their Terminal conversations and their decks. The script that
+keeps that promise is `backend/scripts/purge-inactive-accounts.js`, a dry run
+unless called with `--apply`.
+
+On the host a monthly cron job runs it inside the container. **Select the
+container by the UUID of the Coolify resource, not by name**: the name changes
+on every deploy, so a job pinned to the name stops working without saying so.
+
+```bash
+C=$(docker ps --format '{{.Names}}' | grep "^<resource-uuid>" | head -1)
+docker exec "$C" node scripts/purge-inactive-accounts.js --apply
+```
+
 ---
 
 ## 👤 Author & Legal
