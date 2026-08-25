@@ -26,9 +26,10 @@ services:
     # produzione il 2026-08-24, non da quelle che il codice potrebbe usare:
     # senza EMAIL_FROM e CONTACT_RECIPIENT_EMAIL le email di attivazione e il
     # modulo contatti smettono di funzionare senza dire niente.
-    # CLOUDINARY_URL e SHEETS_URL oggi non sono impostate e il codice regge la
-    # loro assenza, ma restano passate per non dover ritoccare il file il giorno
-    # in cui servono.
+    # SHEETS_URL oggi non e' impostata e il codice regge la sua assenza, ma resta
+    # passata per non dover ritoccare il file il giorno in cui serve.
+    # CLOUDINARY_URL e' stata tolta il 2026-08-25 insieme al fornitore: le
+    # immagini delle notizie stanno nel volume qui sotto e le serve il backend.
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -42,11 +43,16 @@ services:
       - EMAIL_FROM=${EMAIL_FROM}
       - EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
       - CONTACT_RECIPIENT_EMAIL=${CONTACT_RECIPIENT_EMAIL}
-      - CLOUDINARY_URL=${CLOUDINARY_URL:-}
       - SHEETS_URL=${SHEETS_URL:-}
       - FRONTEND_URL=https://www.joulezeropoint.com
     expose:
       - "3000"
+    # Le immagini delle notizie, caricate dal pannello editoriale e servite da
+    # /news. Senza questo volume vivrebbero dentro il container e sparirebbero
+    # al primo deploy: era il motivo per cui stavano su Cloudinary, che pero'
+    # vedeva l'indirizzo IP di chi apriva una notizia.
+    volumes:
+      - joule-news-images:/app/public/news
     healthcheck:
       # 127.0.0.1 e non localhost: dentro il container localhost risolve prima
       # su ::1, e un servizio in ascolto solo su IPv4 rifiuta la connessione.
@@ -74,3 +80,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+volumes:
+  joule-news-images:
