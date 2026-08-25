@@ -56,6 +56,25 @@ async function purgeInactiveAccounts() {
   await mongoose.connect( process.env.MONGODB_URI );
   console.log( `Connected. Mode: ${apply ? 'APPLY (deletes data)' : 'DRY RUN (no changes)'}` );
 
+  // Backfill: accounts created before lastLogin existed do not have the field.
+  // The search below handles them through updatedAt, but the schema declares a
+  // default of Date.now, so the first time anything saves one of those documents
+  // the field would be written as "now" and the retention clock would restart
+  // from zero. Writing the real value once removes that trap.
+  const daRiallineare = await User.countDocuments( { lastLogin: { $exists: false } } );
+  if ( daRiallineare > 0 ) {
+    console.log( `Accounts without lastLogin: ${daRiallineare}` );
+    if ( apply ) {
+      await User.updateMany(
+        { lastLogin: { $exists: false } },
+        [{ $set: { lastLogin: '$updatedAt' } }]
+      );
+      console.log( 'Backfilled lastLogin from updatedAt.' );
+    } else {
+      console.log( 'Would backfill lastLogin from updatedAt.' );
+    }
+  }
+
   const soglia = new Date();
   soglia.setMonth( soglia.getMonth() - MESI_DI_CONSERVAZIONE );
   console.log( `Cutoff: accounts with no access since ${soglia.toISOString().slice( 0, 10 )}` );
