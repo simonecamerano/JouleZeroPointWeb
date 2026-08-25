@@ -143,20 +143,48 @@
         il testo viene inviato al fornitore del modello.
       </p>
 
-      <h2>9. Cookie e Marcatura Temporale (Session Management)</h2>
+      <h2>9. Cookie e memoria locale del browser</h2>
       <p>
-        Joule: Zero Point non utilizza cookie di profilazione o tracciamento
-        pubblicitario. Utilizziamo esclusivamente:
+        <strong>Joule: Zero Point non usa cookie.</strong> Nessuno: né tecnici,
+        né di statistica, né di profilazione o pubblicitari. Se apri il sito e
+        non effettui l'accesso, nel tuo dispositivo non viene scritto nulla, e
+        per questo non troverai nessun banner di consenso: non c'è niente da
+        consentire.
+      </p>
+      <p>
+        Quando invece effettui l'accesso, il sito usa la memoria locale del tuo
+        browser per farti restare collegato tra una pagina e l'altra. Vi
+        conserva quattro informazioni:
       </p>
       <ul>
-        <li>
-          <strong>Cookie Tecnici</strong>: Necessari per mantenere la
-          connessione sicura al tuo profilo.
-        </li>
-        <li>
-          <strong>LocalStorage</strong>: Tecnologia di archiviazione lato client utilizzata per memorizzare il Token (JWT) e le preferenze di consenso. A differenza dei cookie, questi dati non vengono inviati automaticamente al server ad ogni richiesta, garantendo maggiore controllo e sicurezza.
-        </li>
+        <li><strong>token</strong>: il contrassegno che dimostra al server che sei tu, senza rimandare la password a ogni richiesta.</li>
+        <li><strong>username</strong> ed <strong>email</strong>: i dati del tuo profilo, per mostrarli nell'interfaccia senza richiederli di nuovo al server.</li>
+        <li><strong>isAdmin</strong>: se il tuo profilo ha funzioni di amministrazione, per decidere quali voci di menu mostrarti.</li>
       </ul>
+      <p>
+        Sono tutte informazioni strettamente necessarie a fornirti il servizio
+        che hai richiesto accedendo, quindi non richiedono un consenso separato.
+        Nessuna serve a seguirti, e nessuna viene condivisa con terzi. Puoi
+        cancellarle in qualsiasi momento uscendo dal tuo profilo o svuotando i
+        dati del sito dalle impostazioni del browser.
+      </p>
+      <p>
+        C'è infine un contrassegno tecnico temporaneo, che dura fino alla
+        chiusura della scheda, usato per ricaricare la pagina una sola volta
+        quando il sito viene aggiornato mentre lo stai usando. Non contiene
+        niente di te.
+      </p>
+      <p>
+        Il sito è inoltre installabile come applicazione e continua a funzionare
+        con una connessione instabile. Per riuscirci, già alla prima visita
+        salva nella memoria del tuo browser una copia dei propri file: pagine,
+        fogli di stile, immagini delle carte e notizie che hai già aperto. È una
+        copia del sito, non un dato su di te: non contiene informazioni
+        personali, non permette di riconoscerti e non viene trasmessa a nessuno.
+        Serve a farlo funzionare e per questo non richiede un consenso, ma puoi
+        rimuoverla in ogni momento svuotando i dati del sito dalle impostazioni
+        del browser.
+      </p>
 
       <h2>10. Basi Giuridiche del Trattamento (Art. 6 GDPR)</h2>
       <p>
@@ -165,7 +193,7 @@
       <ul>
         <li><strong>Esecuzione del Contratto (Art. 6.1.b)</strong>: Per la creazione e gestione dell'account di gioco.</li>
         <li><strong>Legittimo Interesse (Art. 6.1.f)</strong>: Per il monitoraggio dei log di errore e la sicurezza del sistema.</li>
-        <li><strong>Consenso dell'Interessato (Art. 6.1.a)</strong>: Per l'utilizzo delle funzionalità basate su Intelligenza Artificiale e per la gestione del consenso cookie.</li>
+        <li><strong>Consenso dell'Interessato (Art. 6.1.a)</strong>: Per l'utilizzo delle funzionalità basate su Intelligenza Artificiale.</li>
       </ul>
 
       <h2>11. Trasferimento Dati Extra-UE</h2>

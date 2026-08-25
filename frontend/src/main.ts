@@ -18,6 +18,12 @@ window.addEventListener( 'load', () => {
   sessionStorage.removeItem( 'joule-chunk-reload-attempted' )
 } )
 
+// Pulizia una tantum: il banner cookie e' stato rimosso perche' il sito non
+// usa cookie e non scrive nulla nel dispositivo di chi non ha effettuato
+// l'accesso. La chiave del consenso resta pero' nei browser di chi ha gia'
+// visitato il sito, e non deve restarci.
+localStorage.removeItem( 'joule_cookie_consent' )
+
 const app = createApp(App)
 const pinia = createPinia()
 const head = createHead()

@@ -12,10 +12,6 @@ const route = useRoute();
  */
 const hideUI = computed(() => route.meta.hideUI === true);
 
-// Cookie Consent Trigger
-const openCookieSettings = () => {
-  window.dispatchEvent(new CustomEvent("open-cookie-banner"));
-};
 </script>
 
 <template>
@@ -36,7 +32,6 @@ const openCookieSettings = () => {
       <RouterLink to="/code-of-conduct">Codice di condotta</RouterLink>
       <RouterLink to="/privacy">Informativa sulla privacy</RouterLink>
       <RouterLink to="/contact">Contatti</RouterLink>
-      <a href="#" aria-label="Impostazioni Sensori e Cookie" @click.prevent="openCookieSettings">Impostazioni Cookie</a>
     </div>
     <div class="footer-divider footer-divider--secondary"></div>
     <div class="footer-copyright">
