@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import * as fs from 'fs';
 import logger from '../config/logger';
 import { 
   getNews, 
@@ -11,7 +10,6 @@ import {
 } from '../controllers/newsController';
 import { adminProtect } from '../middleware/adminMiddleware';
 import { uploadNewsImage } from '../config/multer';
-import { uploadToCloudinary } from '../utils/cloudinary';
 
 /**
  * News Routes (TypeScript).
@@ -68,7 +66,11 @@ router.delete('/:slug', adminProtect, deleteNews);
  * @route   POST /api/v1/news/admin/upload-image
  * @desc    Upload news imagery to the central asset repository
  * @access  Private/Admin
- * @protocol Manages file size constraints and cloud storage via Multer and Cloudinary.
+ * @protocol Manages file size constraints via Multer. The file is stored on this
+ *           server, under public/news, which is a persistent volume: images used to
+ *           be uploaded to Cloudinary, a third party that received the IP address of
+ *           every visitor who opened a news item. Serving them from our own domain
+ *           removes that recipient entirely, which is simpler than governing it.
  */
 router.post('/admin/upload-image', adminProtect, (req: Request, res: Response) => {
     uploadNewsImage.single('image')(req, res, async (error: any) => {
@@ -85,19 +87,11 @@ router.post('/admin/upload-image', adminProtect, (req: Request, res: Response) =
             return res.status(400).json({ error: 'Null payload detected: No asset file received.' });
         }
 
-        // --- CLOUDINARY PERSISTENCE LAYER ---
-        const cloudUrl = await uploadToCloudinary(req.file.path);
-        
-        if (cloudUrl) {
-            // Cleanup temporary local file
-            try { fs.unlinkSync(req.file.path); } catch (e) { /* silent cleanup error */ }
-            return res.status(201).json({ imageUrl: cloudUrl });
-        }
-
-        // LOCAL FALLBACK (Ephemeral: will be lost on redeploy)
-        const backendOrigin = process.env.BACKEND_URL || '';
+        // The path is relative on purpose: pages and API answer on the same origin,
+        // so an absolute URL would only hardcode the domain and break the day it
+        // changes. nginx routes /news to this service.
         return res.status(201).json({
-            imageUrl: `${backendOrigin}/news/${req.file.filename}`
+            imageUrl: `/news/${req.file.filename}`
         });
     });
 });

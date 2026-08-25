@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 // Load environment variables before any other imports that might depend on them
 dotenv.config({ quiet: true });
 
+import { NEWS_IMAGES_DIR } from './config/paths';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -186,7 +187,7 @@ app.use('/api/v1/contact', contactRoutes);
 app.use('/news', (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, express.static(path.join(__dirname, 'public/news')));
+}, express.static(NEWS_IMAGES_DIR));
 
 /**
  * --- 404 HANDLER ---

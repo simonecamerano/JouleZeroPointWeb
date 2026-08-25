@@ -110,9 +110,6 @@
           trasferimenti si reggono sulle clausole contrattuali standard.
         </li>
         <li>
-          <strong>Cloudinary</strong>: archivio delle immagini delle news.
-        </li>
-        <li>
           <strong>Brevo (Sendinblue)</strong>: invio delle email di attivazione
           dell'account e dei messaggi inviati dal modulo contatti.
         </li>
