@@ -1,0 +1,9 @@
+{
+  "name": "joule-zero-point",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "npm --prefix frontend test",
+    "test:backend": "npm --prefix backend test"
+  }
+}
