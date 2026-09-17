@@ -81,7 +81,7 @@ services:
     # imprevedibile (a volte serve i contenuti, a volte redirige).
     labels:
       - "traefik.http.middlewares.joule-redirect-www.redirectregex.regex=^https?://joulezeropoint\\.com/(.*)"
-      - "traefik.http.middlewares.joule-redirect-www.redirectregex.replacement=https://www.joulezeropoint.com/$${1}"
+      - "traefik.http.middlewares.joule-redirect-www.redirectregex.replacement=https://www.joulezeropoint.com/$1"
       - "traefik.http.middlewares.joule-redirect-www.redirectregex.permanent=true"
       - "traefik.http.routers.joule-nonwww-https.rule=Host(`joulezeropoint.com`)"
       - "traefik.http.routers.joule-nonwww-https.entrypoints=https"
