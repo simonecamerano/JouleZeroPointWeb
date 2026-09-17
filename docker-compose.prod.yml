@@ -70,6 +70,27 @@ services:
       - "80"
     depends_on:
       - backend
+    # Redirect 301 da joulezeropoint.com (senza www) verso www.joulezeropoint.com.
+    # Finora Coolify metteva entrambi i domini nello stesso Host(), senza
+    # redirect: Google Search Console segnalava le due varianti come pagina
+    # duplicata senza URL canonico selezionato. Perche' funzioni, "Domains" del
+    # servizio frontend su Coolify deve restare SOLO su
+    # https://www.joulezeropoint.com: se joulezeropoint.com resta anche li',
+    # Coolify rigenera il suo router Host(`joulezeropoint.com`) senza redirect
+    # e questi due router in piu' finiscono in conflitto con quello, con esito
+    # imprevedibile (a volte serve i contenuti, a volte redirige).
+    labels:
+      - "traefik.http.middlewares.joule-redirect-www.redirectregex.regex=^https?://joulezeropoint\\.com/(.*)"
+      - "traefik.http.middlewares.joule-redirect-www.redirectregex.replacement=https://www.joulezeropoint.com/$${1}"
+      - "traefik.http.middlewares.joule-redirect-www.redirectregex.permanent=true"
+      - "traefik.http.routers.joule-nonwww-https.rule=Host(`joulezeropoint.com`)"
+      - "traefik.http.routers.joule-nonwww-https.entrypoints=https"
+      - "traefik.http.routers.joule-nonwww-https.tls=true"
+      - "traefik.http.routers.joule-nonwww-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.joule-nonwww-https.middlewares=joule-redirect-www"
+      - "traefik.http.routers.joule-nonwww-http.rule=Host(`joulezeropoint.com`)"
+      - "traefik.http.routers.joule-nonwww-http.entrypoints=http"
+      - "traefik.http.routers.joule-nonwww-http.middlewares=joule-redirect-www"
     healthcheck:
       # Deve essere 127.0.0.1: la direttiva "listen 80" di nginx ascolta solo su
       # IPv4, mentre localhost dentro il container risolve prima su ::1, quindi il

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
+import { useHead } from "@unhead/vue";
 import FloatingTerminalTrigger from "./components/layout/FloatingTerminalTrigger.vue";
 import TheFooter from "./components/layout/TheFooter.vue";
 import TheNavbar from "./components/layout/TheNavbar.vue";
@@ -54,6 +55,17 @@ watch(
   },
   { immediate: true }
 );
+
+// Un solo dominio canonico (www): l'app risponde anche su joulezeropoint.com
+// senza www, e Google le vedeva come due pagine duplicate senza un URL scelto.
+useHead({
+  link: [
+    {
+      rel: "canonical",
+      href: computed(() => `https://www.joulezeropoint.com${route.path}`),
+    },
+  ],
+});
 </script>
 
 <template>
