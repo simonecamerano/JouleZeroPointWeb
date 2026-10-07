@@ -58,13 +58,26 @@ watch(
 
 // Un solo dominio canonico (www): l'app risponde anche su joulezeropoint.com
 // senza www, e Google le vedeva come due pagine duplicate senza un URL scelto.
+// Senza barra finale, come nella sitemap: nginx manda /x/ su /x con un 301.
+// La pagina 404 non ha canonico ed e' noindex: nginx la serve gia' con status
+// 404, il meta copre la navigazione interna all'app.
+const isNotFound = computed(() => route.name === "not-found");
+const canonicalPath = computed(() => route.path.replace(/\/+$/, "") || "/");
+
 useHead({
-  link: [
-    {
-      rel: "canonical",
-      href: computed(() => `https://www.joulezeropoint.com${route.path}`),
-    },
-  ],
+  link: computed(() =>
+    isNotFound.value
+      ? []
+      : [
+          {
+            rel: "canonical",
+            href: `https://www.joulezeropoint.com${canonicalPath.value}`,
+          },
+        ],
+  ),
+  meta: computed(() =>
+    isNotFound.value ? [{ name: "robots", content: "noindex" }] : [],
+  ),
 });
 </script>
 
