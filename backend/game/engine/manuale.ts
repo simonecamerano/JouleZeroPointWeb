@@ -3,10 +3,14 @@ import { cercaInCampo, contaInColonna, def } from './carte';
 import { log, nomeG } from './log';
 import { pesca } from './risorse';
 import { inverti, ricalcolaTP } from './temperatura';
-import { AzioneBase, COLONNE, GIOCATORI, PlayerId, STATI, StatoPartita } from './types';
+import { AzioneBase, CartaCampo, COLONNE, GIOCATORI, PlayerId, STATI, StatoPartita } from './types';
 
 const intero = (n: unknown, max: number): boolean =>
   typeof n === 'number' && Number.isInteger(n) && n !== 0 && Math.abs(n) <= max;
+
+/** Nome di una carta in campo per il log pubblico: una carta coperta non si rivela. */
+const nomeVisibile = (s: StatoPartita, fc: CartaCampo): string =>
+  fc.coperta ? 'Un Frammento coperto' : def(s, fc.cardId).nome;
 
 /** Apre il pannello degli effetti manuali su una fonte che il giocatore controlla. */
 export function usaEffetto(s: StatoPartita, p: PlayerId, uid: string): string | null {
@@ -20,7 +24,10 @@ export function usaEffetto(s: StatoPartita, p: PlayerId, uid: string): string | 
   else if (s.anomalia?.uid === uid) cardId = s.anomalia.cardId;
   else {
     const t = cercaInCampo(s, uid);
-    if (t && t.carta.owner === p) cardId = t.carta.cardId;
+    if (t && t.carta.owner === p) {
+      if (t.carta.coperta) return 'Una carta coperta non applica il suo effetto finché è coperta';
+      cardId = t.carta.cardId;
+    }
   }
   if (cardId === null) return 'Puoi usare solo il tuo Costruttore, l\'Anomalia attiva o un tuo Frammento in campo';
   s.decisione = { tipo: 'effettoManuale', giocatore: p, uid, origine: 'libero' };
@@ -38,7 +45,7 @@ export function applicaBase(s: StatoPartita, p: PlayerId, b: AzioneBase): string
       if (!intero(b.delta, 10)) return 'La modifica deve essere un intero tra -10 e 10, diverso da 0';
       if (!['collisione', 'round', 'permanente'].includes(b.durata)) return 'Durata non valida';
       t.carta.modifiche.push({ stat: b.stat, delta: b.delta, durata: b.durata });
-      log(s, `${def(s, t.carta.cardId).nome}: ${b.delta > 0 ? '+' : ''}${b.delta} ${b.stat.toUpperCase()} (${b.durata})`);
+      log(s, `${nomeVisibile(s, t.carta)}: ${b.delta > 0 ? '+' : ''}${b.delta} ${b.stat.toUpperCase()} (${b.durata})`);
       return null;
     }
     case 'cambiaStato': {
@@ -47,7 +54,7 @@ export function applicaBase(s: StatoPartita, p: PlayerId, b: AzioneBase): string
       if (b.stato !== null && !STATI.includes(b.stato)) return 'Stato non valido';
       t.carta.statoForzato = b.stato;
       ricalcolaTP(s);
-      log(s, `${def(s, t.carta.cardId).nome} diventa ${b.stato ?? 'il suo stato originale'}`);
+      log(s, `${nomeVisibile(s, t.carta)} diventa ${b.stato ?? 'il suo stato originale'}`);
       return null;
     }
     case 'sposta': {
@@ -63,7 +70,7 @@ export function applicaBase(s: StatoPartita, p: PlayerId, b: AzioneBase): string
       if (!t) return 'La carta non è in campo';
       if (![null, 'caldo', 'freddo'].includes(b.segnalino)) return 'Segnalino non valido';
       t.carta.segnalino = b.segnalino;
-      log(s, `${def(s, t.carta.cardId).nome}: segnalino ${b.segnalino ?? 'rimosso'}`);
+      log(s, `${nomeVisibile(s, t.carta)}: segnalino ${b.segnalino ?? 'rimosso'}`);
       return null;
     }
     case 'tp':

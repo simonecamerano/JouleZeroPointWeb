@@ -1,9 +1,10 @@
 import { metti } from './campo';
 import { contaInColonna, costoEffettivo, def, isFrammento } from './carte';
 import { log, nomeG, NOMI_COLONNA } from './log';
-import { altro, Colonna, PlayerId, StatoPartita } from './types';
+import { altro, COLONNE, Colonna, PlayerId, StatoPartita } from './types';
 
 export function giocaCarta(s: StatoPartita, p: PlayerId, uid: string, colonna?: Colonna): string | null {
+  if (colonna !== undefined && !COLONNE.includes(colonna)) return 'Colonna non valida';
   const g = s.giocatori[p];
   const carta = g.mano.find((c) => c.uid === uid);
   if (!carta) return 'La carta non è nella tua mano';

@@ -199,4 +199,33 @@ describe('effetti manuali', () => {
     expect(s.flusso).toBe('invertito');
     expect(s.giocatori.A.it).toBe(19);
   });
+
+  test('usaEffetto rifiuta un proprio Frammento coperto nel Futuro, senza cambiare stato', () => {
+    const s = statoVuoto();
+    const fc = inCampo(s, 'A', 3, 'futuro', { coperta: true });
+    expect(usaEffetto(s, 'A', fc.uid)).toMatch(/coperta/);
+    expect(s.decisione).toBeNull();
+    expect(s.log).toEqual([]);
+  });
+
+  test('modifica su una carta coperta non rivela il nome nel log pubblico', () => {
+    const s = statoVuoto();
+    s.decisione = { tipo: 'effettoManuale', giocatore: 'A', uid: 'A-C', origine: 'libero' };
+    const b = inCampo(s, 'B', 3, 'presente', { coperta: true });
+    expect(applicaBase(s, 'A', { op: 'modifica', uid: b.uid, stat: 'pep', delta: -2, durata: 'collisione' })).toBeNull();
+    const pubblici = s.log.filter((v) => !v.soloPer && v.testo.includes(s.carte[3].nome));
+    expect(pubblici).toEqual([]);
+    expect(s.log.some((v) => v.testo.includes('Un Frammento coperto'))).toBe(true);
+  });
+});
+
+describe('giocaCarta: colonna validata', () => {
+  test('colonna non prevista rifiutata prima di ogni altro controllo, senza cambiare stato', () => {
+    const s = statoVuoto();
+    const c = inMano(s, 'A', 1);
+    expect(giocaCarta(s, 'A', c.uid, 'nope' as 'presente')).toMatch(/Colonna non valida/);
+    expect(s.giocatori.A.mano).toHaveLength(1);
+    expect(s.giocatori.A.et).toBe(3);
+    expect(s.colonne.presente).toEqual([]);
+  });
 });
