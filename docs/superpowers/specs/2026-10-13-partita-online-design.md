@@ -123,9 +123,10 @@ Tutte quelle del regolamento 6.0:
 - **Slittamento**: non avviene nel round 1. Scorrimento secondo il flusso (Normale Futuro → Presente →
   Passato, Invertito al contrario); la carta che esce illesa si salva in cima
   al mazzo corrispondente; ingresso simultaneo nel Presente; rimozione dei
-  segnalini termici e ricalcolo della TP. Capienza 4 Frammenti per colonna:
-  se lo slittamento porta un quinto Frammento, il motore chiede al controllore
-  quale distruggere.
+  segnalini termici e ricalcolo della TP. Capienza: **4 Frammenti per colonna
+  per ciascun giocatore** (deciso il 2026-10-13); se un effetto porta un
+  quinto Frammento di un giocatore in una colonna, il motore chiede al
+  controllore quale distruggere.
 - **Risorse**: ET +1 fino a 10; pesca dal mazzo attivo (Futuro in flusso
   Normale, Memoria in flusso Invertito); Bonus Controllo per chi ha più
   Frammenti nel Presente, che può scegliere se pescare la carta extra; Scambio una volta per round (scarta 1, +1 ET).
@@ -151,6 +152,15 @@ Tutte quelle del regolamento 6.0:
 Gerarchia: il testo della carta prevale sul regolamento. Negli script si
 esprime con effetti che sovrascrivono un valore di regola (per esempio un
 costo o un limite) per la durata indicata.
+
+### 5.0 Interpretazioni
+
+I punti che il PDF v6 lascia aperti (TP derivata, soglia dell'Inversione
+spontanea, destinatario del Supporto Istantaneo, ricarica dell'ET, dettagli
+delle proprietà degli stati, carte coperte, simultaneità delle vittorie) sono
+elencati e decisi nel piano
+`docs/superpowers/plans/2026-10-13-motore-regole-1a.md`, sezione
+"Interpretazioni del regolamento".
 
 ### 5.1 Finestre di risposta
 
@@ -360,6 +370,8 @@ nell'export e nella cancellazione GDPR già esistenti e nel task di ritenzione
 ## 12. Tappe
 
 1. **Motore e partita 1 contro 1 tra persone**, tutti gli effetti manuali.
+   Divisa in due piani: 1A motore di regole puro e testato, 1B rete
+   (Socket.IO, partite, inviti) e tavolo di gioco.
 2. **Worker AI locale** con `claude -p` e bot di riserva.
 3. **Automazione delle carte** a gruppi, partendo dai mazzi starter.
 4. *(Fuori da questa spec)* community: matchmaking, persistenza delle partite
