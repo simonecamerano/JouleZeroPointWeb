@@ -105,7 +105,8 @@ export function applicaBase(s: StatoPartita, p: PlayerId, b: AzioneBase): string
       const v = s.stack.find((x) => x.carta.uid === b.uid && !x.risolta);
       if (!v) return 'Nessun effetto da annullare con quella carta';
       v.annullata = true;
-      log(s, `L'effetto di ${def(s, v.carta.cardId).nome} viene annullato`);
+      const t = cercaInCampo(s, v.carta.uid);
+      log(s, `L'effetto di ${t ? nomeVisibile(s, t.carta) : def(s, v.carta.cardId).nome} viene annullato`);
       return null;
     }
     default:

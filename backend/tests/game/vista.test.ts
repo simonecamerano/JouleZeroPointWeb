@@ -1,6 +1,6 @@
 import { applica, chiDeveAgire, creaPartita, vista } from '../../game/engine';
 import { Azione, PlayerId, StatoPartita } from '../../game/engine/types';
-import { catalogoProva, mazzoProva } from './helpers';
+import { catalogoProva, mazzoProva, statoVuoto } from './helpers';
 
 function pronta(): StatoPartita {
   let s = creaPartita({ seed: 4, mazzi: { A: mazzoProva(), B: mazzoProva() }, catalogo: catalogoProva() });
@@ -63,5 +63,25 @@ describe('vista', () => {
     expect(tutte).toHaveLength(40);
     const ordinate = tutte.sort((x, y) => Number(x.uid.slice(1)) - Number(y.uid.slice(1))).map((c) => c.cardId);
     expect(ordinate).not.toEqual(mazzoProva().carte);
+  });
+
+  test('annullare l\'effetto di un Frammento coperto non ne scrive il nome nel log pubblico', () => {
+    let s = statoVuoto();
+    s.giocatori.A.et = 5; s.giocatori.B.et = 5;
+    s.giocatori.A.mano.push({ uid: 'SEG', cardId: 9, owner: 'A' });
+    s.giocatori.B.mano.push({ uid: 'EVB', cardId: 6, owner: 'B' });
+    const passo = (p: PlayerId, a: Azione) => {
+      const r = applica(s, p, a);
+      if (!r.ok) throw new Error(r.errore);
+      s = r.stato;
+    };
+    passo('A', { tipo: 'giocaCarta', uid: 'SEG', colonna: 'futuro' });
+    passo('B', { tipo: 'giocaCarta', uid: 'EVB' });
+    passo('A', { tipo: 'passa' });
+    passo('B', { tipo: 'base', base: { op: 'annulla', uid: 'SEG' } });
+    expect(s.stack.find((v) => v.carta.uid === 'SEG')!.annullata).toBe(true);
+    const testi = vista(s, 'B').log.map((l) => l.testo);
+    expect(testi.join('\n')).not.toContain(s.carte[9].nome);
+    expect(testi).toContain('L\'effetto di Un Frammento coperto viene annullato');
   });
 });
