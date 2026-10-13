@@ -695,7 +695,14 @@ export class GestorePartite {
     if (!azione || typeof azione !== 'object' || typeof (azione as { tipo?: unknown }).tipo !== 'string') {
       return rifiuta('Azione non valida');
     }
-    const r = applica(p.stato, ruolo, azione as Azione);
+    // `applica` può ancora lanciare su input imprevisti (minor aperto del piano 1A): lo stato resta quello di prima.
+    let r: ReturnType<typeof applica>;
+    try {
+      r = applica(p.stato, ruolo, azione as Azione);
+    } catch (e) {
+      console.error(`Partita ${p.codice}: applica ha lanciato ${(e as Error).message}`);
+      return rifiuta('Mossa non applicabile');
+    }
     if (!r.ok) return rifiuta(r.errore);
     p.stato = r.stato;
     p.log.push({ t: new Date(), giocatore: ruolo, azione });
@@ -1071,7 +1078,12 @@ e
     p.timer.finestra = setTimeout(() => {
       p.timer.finestra = undefined;
       if (!p.stato || chiDeveAgire(p.stato) !== chi || !p.stato.finestra) return;
-      const r = applica(p.stato, chi, { tipo: 'passa' });
+      let r: ReturnType<typeof applica>;
+      try {
+        r = applica(p.stato, chi, { tipo: 'passa' });
+      } catch {
+        return;
+      }
       if (!r.ok) return;
       p.stato = r.stato;
       p.log.push({ t: new Date(), giocatore: 'server', azione: { tipo: 'passa', per: chi, motivo: 'timeout' } });
