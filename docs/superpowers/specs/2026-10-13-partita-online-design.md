@@ -197,7 +197,7 @@ valida tra quelle che il motore evidenzia.
 
 **Copertura**: obiettivo iniziale le carte dei mazzi starter, poi le altre per
 frequenza d'uso. Stima di copertura totale con questo linguaggio: 60-70% delle
-160 carte. Gli script li scrive l'agente a partire dal testo; Simone li valida
+120 carte del set attuale. Gli script li scrive l'agente a partire dal testo; Simone li valida
 a gruppi prima del rilascio.
 
 **Script in errore**: se l'esecuzione di uno script fallisce, quella carta
@@ -343,11 +343,15 @@ corso al riavvio del server.
 
 ## 14. Punti aperti
 
+Fonte delle carte: il database del sito, alimentato dal Google Sheet
+(verificato il 2026-10-13: 120 carte, ID non consecutivi da 1 a 263,
+terminologia del regolamento 6.0, "Frammento" e "Collisione"). I CSV locali
+precedenti (160 carte, "Molecola") sono superati e non vanno usati per gli
+script.
+
+
 - Assegnazione degli slot laterali del tabellone ai mazzi di ciascun
   giocatore: da confermare sul regolamento.
-- Terminologia del testo carte: il CSV v4 parla di "Molecola" e "Collisione
-  Molecolare", il regolamento 6.0 di "Frammento" e "Collisione". Verificare
-  quale versione è nel database prima di scrivere gli script.
 - Ruolo del Costruttore in partita: il regolamento tecnico strutturato non lo
   descrive. Ricavarlo dal PDF v6 e dagli effetti delle 10 carte Costruttore
   prima del piano della tappa 1.
