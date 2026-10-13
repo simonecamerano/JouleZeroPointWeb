@@ -55,4 +55,13 @@ describe('vista', () => {
     expect(privateA.length).toBeGreaterThan(0);
     for (const l of privateBvisteDaA) expect(vista(s, 'A').log).not.toContainEqual(l);
   });
+
+  test('gli uid non rivelano l\'ordine della lista del mazzo', () => {
+    const s = pronta();
+    const g = s.giocatori.A;
+    const tutte = [...g.futuro, ...g.memoria, ...g.mano, ...g.orizzonte];
+    expect(tutte).toHaveLength(40);
+    const ordinate = tutte.sort((x, y) => Number(x.uid.slice(1)) - Number(y.uid.slice(1))).map((c) => c.cardId);
+    expect(ordinate).not.toEqual(mazzoProva().carte);
+  });
 });

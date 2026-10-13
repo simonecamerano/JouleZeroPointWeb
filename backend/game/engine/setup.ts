@@ -16,7 +16,7 @@ export function creaPartita(o: {
   }
   const giocatore = (p: PlayerId): Giocatore => ({
     id: p,
-    futuro: o.mazzi[p].carte.map((cardId, i) => ({ uid: `${p}${i}`, cardId, owner: p })),
+    futuro: [],
     memoria: [], mano: [], orizzonte: [],
     costruttore: { uid: `${p}-C`, cardId: o.mazzi[p].costruttore, owner: p },
     it: 20, et: 3, etMax: 3, mulliganFatto: false, scambioUsato: false,
@@ -31,7 +31,11 @@ export function creaPartita(o: {
   };
   for (const p of GIOCATORI) {
     const g = s.giocatori[p];
-    mescola(s, g.futuro);
+    // Mescolare PRIMA di assegnare gli uid: se gli uid seguissero l'ordine della lista, un avversario
+    // che vede gli uid delle carte rivelate ricostruirebbe i cardId di quelle coperte e del Futuro.
+    const ordine = [...o.mazzi[p].carte];
+    mescola(s, ordine);
+    g.futuro = ordine.map((cardId, i) => ({ uid: `${p}${i}`, cardId, owner: p }));
     g.memoria = g.futuro.splice(30);
     g.mano = g.futuro.splice(0, 5);
   }
