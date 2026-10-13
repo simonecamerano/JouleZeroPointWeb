@@ -2,7 +2,10 @@
 
 Data: 2026-10-13
 Stato: bozza da approvare
-Regolamento di riferimento: v6.0 (`backend/config/rulebook.json`)
+Regolamento di riferimento: v6.0, testo integrale del PDF
+`frontend/public/Regolamento_Joule_Zero_Point_v6.pdf` (le sezioni di
+`backend/config/rulebook.json` ne sono la versione strutturata; il riassunto
+`ai.rulebook` per il Terminale è incompleto e non va usato come fonte)
 
 ## 1. Scopo
 
@@ -102,10 +105,22 @@ chiusa senza esito. Un riavvio del server perde le partite in corso
 
 ## 5. Regole automatizzate dal motore
 
-Tutte quelle del regolamento tecnico 6.0:
+Tutte quelle del regolamento 6.0:
 
-- **Setup**: come al punto 3 della sezione 4.
-- **Slittamento**: scorrimento secondo il flusso (Normale Futuro → Presente →
+- **Setup**: come al punto 3 della sezione 4. Chi vince il dado sceglie se
+  tenere l'iniziativa o cederla.
+- **Iniziativa**: passa all'altro giocatore a fine round. Quando più effetti
+  si attivano insieme, chi ha l'iniziativa risolve prima i propri.
+- **Zona di attivazione**: un Frammento applica il proprio testo solo nel
+  Presente, salvo effetti che nominano esplicitamente un'altra colonna.
+- **Costruttore**: 1 per giocatore, fuori dal mazzo, sempre in gioco dal
+  setup e non distruttibile. Il suo testo è un effetto permanente (spesso
+  "una volta per round"), espresso con lo stesso linguaggio di script delle
+  altre carte.
+- **Anomalie**: una sola attiva per tutto il tavolo; una nuova Anomalia,
+  giocata da chiunque, sostituisce la precedente, che va nell'Orizzonte
+  degli Eventi.
+- **Slittamento**: non avviene nel round 1. Scorrimento secondo il flusso (Normale Futuro → Presente →
   Passato, Invertito al contrario); la carta che esce illesa si salva in cima
   al mazzo corrispondente; ingresso simultaneo nel Presente; rimozione dei
   segnalini termici e ricalcolo della TP. Capienza 4 Frammenti per colonna:
@@ -113,7 +128,7 @@ Tutte quelle del regolamento tecnico 6.0:
   quale distruggere.
 - **Risorse**: ET +1 fino a 10; pesca dal mazzo attivo (Futuro in flusso
   Normale, Memoria in flusso Invertito); Bonus Controllo per chi ha più
-  Frammenti nel Presente; Scambio una volta per round (scarta 1, +1 ET).
+  Frammenti nel Presente, che può scegliere se pescare la carta extra; Scambio una volta per round (scarta 1, +1 ET).
 - **Azioni**: costo per colonna (Presente normale, Futuro -1 ET coperta,
   Passato -1 ET scoperta); Supporto Istantaneo all'ingresso nel Passato
   (+1 PEP se Calda, +1 RP se Fredda, massimo 2 per round per giocatore);
@@ -215,16 +230,33 @@ entrambi.
 
 ## 7. Interfaccia
 
-**Tavolo**: `tabellone6.0.png` come sfondo, con zone cliccabili posizionate in
-percentuale.
+**Tavolo composto, non un'immagine unica.** Il `tabellone6.0.png` deriva da una
+versione precedente e non ha posto per Orizzonte degli Eventi e Anomalia, e ha
+gli slot dorati in posizione non logica. Il tavolo online si compone a pezzi
+in CSS Grid:
 
-- Tre colonne centrali (Passato, Presente, Futuro), massimo 4 Frammenti
-  ciascuna, carte dell'avversario nella metà alta e proprie nella metà bassa,
-  con bordo del colore del giocatore.
-- Termometro a sinistra con indicatore su TP da -4 a +4; animazione
-  all'Inversione.
-- Slot laterali per mazzo Futuro e Memoria di ciascun giocatore, con retro
-  ufficiale (`Retro_Ufficiale.png`) e conteggio.
+- **Tre colonne centrali** ritagliate dal tabellone (Passato a sinistra,
+  Presente al centro, Futuro a destra), massimo 4 Frammenti ciascuna, carte
+  dell'avversario nella metà alta e proprie nella metà bassa, con bordo del
+  colore del giocatore.
+- **Termometro** ritagliato dal tabellone, a sinistra, con indicatore animato
+  su TP da -4 a +4 e animazione all'Inversione.
+- **Slot laterali** costruiti in codice con lo stesso stile (cornice luminosa,
+  retro ufficiale `Retro_Ufficiale.png`, conteggio carte). Disposizione: la
+  metà alta del tavolo è dell'avversario, la metà bassa propria.
+
+| Lato | In alto (avversario) | In basso (proprio) |
+|---|---|---|
+| Sinistra, esterno | Orizzonte degli Eventi | Orizzonte degli Eventi |
+| Sinistra, interno | Memoria | Memoria |
+| Sinistra, centro | Anomalia attiva (unica, sopra il termometro) | |
+| Destra, interno | Costruttore | Costruttore |
+| Destra, esterno | Futuro | Futuro |
+
+Gli asset grafici ritagliati stanno in `frontend/public/images/match/`. Il
+tabellone fisico da stampa resta com'è; un suo eventuale ridisegno (slot
+dorati invertiti, slot nuovi per Orizzonte e Anomalia) è un lavoro separato
+affidato a Codex.
 
 **Attorno al tavolo**: mano propria in basso a ventaglio; mano avversaria in
 alto come retro con conteggio; barra di stato con IT, ET, fase, flusso e
@@ -349,10 +381,4 @@ terminologia del regolamento 6.0, "Frammento" e "Collisione"). I CSV locali
 precedenti (160 carte, "Molecola") sono superati e non vanno usati per gli
 script.
 
-
-- Assegnazione degli slot laterali del tabellone ai mazzi di ciascun
-  giocatore: da confermare sul regolamento.
-- Ruolo del Costruttore in partita: il regolamento tecnico strutturato non lo
-  descrive. Ricavarlo dal PDF v6 e dagli effetti delle 10 carte Costruttore
-  prima del piano della tappa 1.
 - Termini d'uso dell'abbonamento per `claude -p` da script (sezione 8.1).
