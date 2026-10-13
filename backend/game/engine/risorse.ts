@@ -1,6 +1,7 @@
 import { contaInColonna, def } from './carte';
 import { log, nomeG } from './log';
 import { altro, Carta, PlayerId, StatoPartita } from './types';
+import { rinomina } from './uid';
 
 /** Chi ha l'iniziativa per primo. */
 export function ordine(s: StatoPartita): PlayerId[] {
@@ -13,12 +14,14 @@ export function mazzoAttivo(s: StatoPartita, p: PlayerId): Carta[] {
 
 /** Pesca dalla cima del mazzo attivo. Se è vuoto registra il Collasso Entropico. */
 export function pesca(s: StatoPartita, p: PlayerId): boolean {
-  const c = mazzoAttivo(s, p).shift();
-  if (!c) {
+  const preso = mazzoAttivo(s, p).shift();
+  if (!preso) {
     s.sconfitte.push({ giocatore: p, motivo: 'collassoEntropico' });
     log(s, `${nomeG(p)} deve pescare ma il mazzo attivo è vuoto: Collasso Entropico`);
     return false;
   }
+  // Uid nuovo: la carta poteva essere stata vista nella Memoria con il suo uid precedente.
+  const c = rinomina(s, preso);
   s.giocatori[p].mano.push(c);
   if (s.flusso === 'normale') {
     log(s, `${nomeG(p)} pesca una carta dal Futuro`);

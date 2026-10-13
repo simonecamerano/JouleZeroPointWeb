@@ -2,6 +2,7 @@ import { Mazzo, validaMazzo } from './carte';
 import { log, nomeG } from './log';
 import { intero, mescola } from './rng';
 import { altro, DefCarta, Giocatore, GIOCATORI, PlayerId, StatoPartita } from './types';
+import { rinomina } from './uid';
 
 export function creaPartita(o: {
   seed: number; mazzi: Record<PlayerId, Mazzo>; catalogo: Record<number, DefCarta>;
@@ -37,7 +38,7 @@ export function creaPartita(o: {
     mescola(s, ordine);
     g.futuro = ordine.map((cardId, i) => ({ uid: `${p}${i}`, cardId, owner: p }));
     g.memoria = g.futuro.splice(30);
-    g.mano = g.futuro.splice(0, 5);
+    g.mano = g.futuro.splice(0, 5).map((c) => rinomina(s, c));
   }
   let a = 0;
   let b = 0;
@@ -64,10 +65,12 @@ export function sceltaIniziativa(s: StatoPartita, p: PlayerId, tieni: boolean): 
 export function mulligan(s: StatoPartita, p: PlayerId, esegui: boolean): string | null {
   const g = s.giocatori[p];
   if (esegui) {
-    g.futuro.push(...g.mano);
+    // La mano torna nel Futuro e poi se ne pesca una nuova: uid nuovi a ogni ingresso in zona nascosta.
+    const rimesse = g.mano;
     g.mano = [];
+    g.futuro.push(...rimesse.map((c) => rinomina(s, c)));
     mescola(s, g.futuro);
-    g.mano = g.futuro.splice(0, 4);
+    g.mano = g.futuro.splice(0, 4).map((c) => rinomina(s, c));
     log(s, `${nomeG(p)} fa mulligan`);
   }
   g.mulliganFatto = true;

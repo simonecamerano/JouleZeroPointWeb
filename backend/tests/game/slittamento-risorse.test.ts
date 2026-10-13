@@ -27,7 +27,8 @@ describe('Slittamento', () => {
     const pres = inCampo(s, 'A', 2, 'presente');
     const fut = inCampo(s, 'B', 3, 'futuro');
     eseguiSlittamento(s);
-    expect(s.giocatori.B.futuro[0].uid).toBe(fut.uid);
+    // Rientra nel mazzo Futuro (zona nascosta) con un uid nuovo: si riconosce dal cardId.
+    expect(s.giocatori.B.futuro.map((c) => c.cardId)).toEqual([fut.cardId]);
     expect(s.colonne.futuro.map((c) => c.uid)).toEqual([pres.uid]);
     expect(s.colonne.presente.map((c) => c.uid)).toEqual([pas.uid]);
     expect(s.colonne.passato).toHaveLength(0);
@@ -66,10 +67,11 @@ describe('Risorse', () => {
     s.giocatori.A.futuro = [f]; s.giocatori.A.memoria = [m];
     expect(mazzoAttivo(s, 'A')).toBe(s.giocatori.A.futuro);
     expect(pesca(s, 'A')).toBe(true);
-    expect(s.giocatori.A.mano.map((c) => c.uid)).toEqual([f.uid]);
+    // In mano (zona nascosta) la carta riceve un uid nuovo: si riconosce dal cardId.
+    expect(s.giocatori.A.mano.map((c) => c.cardId)).toEqual([f.cardId]);
     s.flusso = 'invertito';
     expect(pesca(s, 'A')).toBe(true);
-    expect(s.giocatori.A.mano.map((c) => c.uid)).toEqual([f.uid, m.uid]);
+    expect(s.giocatori.A.mano.map((c) => c.cardId)).toEqual([f.cardId, m.cardId]);
   });
 
   test('pescare da un mazzo attivo vuoto registra il Collasso Entropico', () => {

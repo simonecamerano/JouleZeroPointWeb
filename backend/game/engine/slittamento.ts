@@ -2,6 +2,7 @@ import { aCarta, supportoIstantaneo } from './campo';
 import { log } from './log';
 import { ricalcolaTP } from './temperatura';
 import { CartaCampo, StatoPartita } from './types';
+import { rinomina } from './uid';
 
 export function eseguiSlittamento(s: StatoPartita): void {
   const { passato, presente, futuro } = s.colonne;
@@ -22,7 +23,7 @@ export function eseguiSlittamento(s: StatoPartita): void {
       s.colonne.presente.push(pulisci(fc));
     }
   } else {
-    for (const fc of futuro) s.giocatori[fc.owner].futuro.unshift(aCarta(fc));
+    for (const fc of futuro) s.giocatori[fc.owner].futuro.unshift(rinomina(s, aCarta(fc)));
     for (const fc of presente) s.colonne.futuro.push(pulisci(fc));
     for (const fc of passato) s.colonne.presente.push(pulisci(fc));
   }
