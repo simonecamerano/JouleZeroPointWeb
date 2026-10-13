@@ -65,9 +65,11 @@ export function risolviCollisione(s: StatoPartita): void {
       condannate.push({ uid: fc.uid, salva });
     }
   }
+  // Il Presente collassa in blocco: la TP si ricalcola una volta sola, in fondo. Ricalcolarla carta per
+  // carta la farebbe passare per valori intermedi (anche ±4, con Inversione) che dipendono dall'ordine.
   for (const c of condannate) {
-    if (c.salva) sposta(s, c.uid, 'passato');
-    else distruggi(s, c.uid);
+    if (c.salva) sposta(s, c.uid, 'passato', { ricalcola: false });
+    else distruggi(s, c.uid, { ricalcola: false });
   }
 
   for (const col of Object.values(s.colonne)) {

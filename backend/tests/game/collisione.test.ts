@@ -1,5 +1,6 @@
 import { risolviCollisione } from '../../game/engine/collisione';
 import { inCampo, statoVuoto } from './helpers';
+import { ricalcolaTP } from '../../game/engine/temperatura';
 
 describe('Collisione', () => {
   test('PEP > RP: Collasso del Presente avversario e danno pari alla differenza', () => {
@@ -94,5 +95,22 @@ describe('Collisione', () => {
     });
     risolviCollisione(s);
     expect(fc.modifiche).toEqual([{ stat: 'rp', delta: 1, durata: 'round' }]);
+  });
+
+  test('il Collasso toglie le carte in blocco: nessuna Inversione spontanea a metà, l\'ordine non conta', () => {
+    const esito = (ordine: number[]) => {
+      const s = statoVuoto();
+      for (let i = 0; i < 3; i++) inCampo(s, 'B', 3, 'presente'); // Gas Caldo
+      for (const id of ordine) inCampo(s, 'A', id, 'presente'); // 10 Liquido Freddo, 11 Gas Caldo
+      ricalcolaTP(s);
+      expect(s.tp).toBe(3);
+      risolviCollisione(s);
+      return { flusso: s.flusso, tp: s.tp, passato: s.colonne.passato.map((c) => c.cardId) };
+    };
+    const freddoPrima = esito([10, 11]);
+    const caldoPrima = esito([11, 10]);
+    expect(freddoPrima).toEqual(caldoPrima);
+    expect(freddoPrima.flusso).toBe('normale');
+    expect(freddoPrima.passato).toEqual([10]);
   });
 });

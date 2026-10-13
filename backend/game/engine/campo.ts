@@ -36,16 +36,21 @@ export function metti(
   return fc;
 }
 
-export function togli(s: StatoPartita, uid: string): CartaCampo | null {
+/**
+ * Toglie una carta dal campo. Con `ricalcola: false` non ricalcola la TP: serve a chi toglie più carte
+ * in blocco (Collasso del Presente) e ricalcola una volta sola alla fine, così la TP non passa per
+ * valori intermedi che dipendono dall'ordine delle carte e non provoca Inversioni spurie.
+ */
+export function togli(s: StatoPartita, uid: string, opz: { ricalcola?: boolean } = {}): CartaCampo | null {
   const t = cercaInCampo(s, uid);
   if (!t) return null;
   s.colonne[t.colonna] = s.colonne[t.colonna].filter((c) => c.uid !== uid);
-  if (t.colonna === 'presente') ricalcolaTP(s);
+  if (t.colonna === 'presente' && opz.ricalcola !== false) ricalcolaTP(s);
   return t.carta;
 }
 
-export function distruggi(s: StatoPartita, uid: string): boolean {
-  const fc = togli(s, uid);
+export function distruggi(s: StatoPartita, uid: string, opz: { ricalcola?: boolean } = {}): boolean {
+  const fc = togli(s, uid, opz);
   if (!fc) return false;
   s.giocatori[fc.owner].orizzonte.push(aCarta(fc));
   log(s, `${def(s, fc.cardId).nome} finisce nell'Orizzonte degli Eventi`);
@@ -54,15 +59,15 @@ export function distruggi(s: StatoPartita, uid: string): boolean {
 
 /** Sposta per effetto: conserva modifiche e stato forzato, non dà Supporto Istantaneo salvo richiesta. */
 export function sposta(
-  s: StatoPartita, uid: string, colonna: Colonna, opz: { supporto?: boolean } = {},
+  s: StatoPartita, uid: string, colonna: Colonna, opz: { supporto?: boolean; ricalcola?: boolean } = {},
 ): CartaCampo | null {
-  const fc = togli(s, uid);
+  const fc = togli(s, uid, { ricalcola: opz.ricalcola });
   if (!fc) return null;
   const coperta = fc.coperta && colonna === 'futuro';
   const n = metti(s, aCarta(fc), colonna, { supporto: opz.supporto ?? false, coperta });
   n.modifiche = fc.modifiche;
   n.statoForzato = fc.statoForzato;
-  if (colonna === 'presente') ricalcolaTP(s);
+  if (colonna === 'presente' && opz.ricalcola !== false) ricalcolaTP(s);
   log(s, `${coperta ? 'Un Frammento coperto' : def(s, fc.cardId).nome} si sposta nel ${NOMI_COLONNA[colonna]}`);
   return n;
 }
