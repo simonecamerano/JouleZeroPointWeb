@@ -69,6 +69,39 @@ Punti che il PDF v6 lascia aperti, decisi qui. Simone li rivede insieme al piano
 | `backend/game/engine/index.ts` | `applica`, `arrendi`, export pubblici |
 | `backend/tests/game/helpers.ts` | Catalogo e stati di prova |
 
+## Definition of Done (Contract)
+
+**Obiettivo misurabile:**
+- `npx jest tests/game` verde su tutti gli 8 file di test del motore.
+- 100 partite simulate con seed 1-100 senza nessuna mossa di `mosseLegali` rifiutata da `applica`, senza nessuno stato in cui la partita non è finita e `chiDeveAgire` restituisce `null`, e con `verificaInvarianti` vuoto dopo ogni passo; almeno 50 su 100 arrivano a un esito entro 3000 passi.
+- Stesso seed e stessa sequenza di azioni producono lo stesso stato (`toEqual`).
+
+**Vincoli:**
+- Quelli di "Global Constraints": codice solo in `backend/game/engine/`, nessuna dipendenza da rete, database, orologio o `Math.random`; capienza 4 Frammenti per colonna per giocatore; valori del regolamento 6.0.
+
+**Formato output:**
+- Modulo `backend/game/engine/index.ts` che esporta `creaPartita`, `applica`, `arrendi`, `chiDeveAgire`, `mosseLegali`, `vista`, `verificaInvarianti`, `validaMazzo`, `daCardDb` e i tipi, con le firme della sezione Interfaces dei task.
+- Un commit per task, 8 commit in tutto.
+
+**Condizioni di FALLIMENTO (l'agente NON può dichiararsi finito se una è vera):**
+- [ ] `cd backend && npx jest tests/game` ha almeno un test rosso o saltato (`skip`, `todo`, `only`).
+- [ ] `cd backend && npx tsc --noEmit` riporta errori.
+- [ ] `cd backend && npm test` ha test rossi che erano verdi prima del lavoro.
+- [ ] Il grep dello Step 8 del Task 8 trova `Math.random`, `Date.now`, `new Date` o import da `express`, `mongoose`, `socket.io`, `config/`, `models/` dentro `backend/game/engine/`.
+- [ ] Un test è stato modificato per farlo passare (cambio di seed, di valori attesi o di soglie) senza che il cambio sia motivato nel messaggio di commit.
+- [ ] `vista(s, p)` contiene il `cardId` di una carta coperta dell'avversario, in campo o nello stack, o una voce di log `soloPer` dell'avversario.
+- [ ] `applica` modifica l'oggetto `stato` ricevuto (il test "rifiuta chi non deve agire e non modifica lo stato" è rosso).
+
+## Rischi (Premortem)
+
+Le 3 cause di fallimento più probabili, previste prima di scrivere codice:
+
+1. **Il motore codifica un'interpretazione delle regole diversa da come Simone gioca davvero al tavolo**, e il playtest online produce risultati che lui non riconosce. → **mitigazione:** le 10 interpretazioni sono elencate in testa al piano e Simone le rivede prima dell'esecuzione; ognuna vive in una sola funzione, quindi correggerla dopo tocca un file e il suo test.
+2. **La macchina delle fasi si blocca in un caso raro** (finestra mai chiusa, decisione senza mosse, ciclo in `avanza`), che i test scritti a mano non coprono e che in partita vera blocca due persone. → **mitigazione:** le partite simulate falliscono se nessuno deve agire a partita aperta o se una mossa legale viene rifiutata, e `avanza` lancia un errore dopo 1000 passi senza decisione (condizioni di fallimento 1 e 5).
+3. **Informazione nascosta che trapela** dal campo, dallo stack o dal log, scoperta solo quando qualcuno guarda il traffico del socket nella tappa 1B. → **mitigazione:** test dedicato in Task 8 su carta coperta in campo, stack e log; condizione di fallimento 6.
+
+**RISCHIO PIÙ ALTO:** il #1. Gli altri due li prende la suite di test; un'interpretazione sbagliata invece passa tutti i test, perché i test la confermano, e si scopre solo giocando.
+
 ---
 
 ### Task 1: Tipi, generatore casuale, catalogo carte
