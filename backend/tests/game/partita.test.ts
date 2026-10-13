@@ -118,7 +118,7 @@ describe('applica', () => {
     expect(s.colonne.passato.map((c) => c.uid)).toContain('X1');
   });
 
-  test('Evento in risposta durante la Collisione: la Collisione si risolve comunque', () => {
+  test('Evento in risposta durante la Collisione: dopo la risoluzione la finestra si riapre, poi la Collisione si risolve', () => {
     let s = pronta(6);
     const a = s.attivo; // pronta() tiene l'iniziativa: a ha l'iniziativa
     const b: PlayerId = a === 'A' ? 'B' : 'A';
@@ -133,6 +133,13 @@ describe('applica', () => {
     expect(s.decisione).toEqual({ tipo: 'effettoManuale', giocatore: b, uid: 'EV', origine: 'stack' });
     s = ok(s, b, { tipo: 'fatto' });
     expect(s.giocatori[b].orizzonte.map((c) => c.uid)).toContain('EV');
+    // Risolto l'Evento, nuova finestra completa: chiude solo con due passa di fila
+    expect(s.round).toBe(1);
+    expect(s.fase).toBe('collisione');
+    expect(s.finestra).toEqual({ contesto: 'collisione', priorita: a, passi: 0, passiNecessari: 2 });
+    s = ok(s, a, { tipo: 'passa' });
+    expect(s.round).toBe(1);
+    s = ok(s, b, { tipo: 'passa' });
     expect(s.round).toBe(2);
     expect(s.fase).toBe('azioni');
     expect(s.finestra).toBeNull();

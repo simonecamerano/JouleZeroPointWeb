@@ -26,6 +26,11 @@ function risolviCimaStack(s: StatoPartita): void {
   }
   s.stack.pop();
   if (d.tipo === 'Evento') s.giocatori[v.carta.owner].orizzonte.push(v.carta);
+  // Alla Collisione, risolte le risposte, la finestra si riapre completa: il confronto
+  // PEP contro RP avviene solo quando entrambi passano di fila senza più nulla da giocare.
+  if (s.fase === 'collisione' && s.stack.length === 0) {
+    s.finestra = { contesto: 'collisione', priorita: s.iniziativa, passi: 0, passiNecessari: 2 };
+  }
 }
 
 /** Esegue le fasi automatiche finché serve una decisione umana o la partita finisce. */

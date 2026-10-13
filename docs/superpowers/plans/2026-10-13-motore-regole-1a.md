@@ -34,8 +34,10 @@ Punti che il PDF v6 lascia aperti, decisi qui. Simone li rivede insieme al piano
 6. **Segnalini termici**: 🔴 aggiunge le proprietà dello stato superiore, 🔵 di quello inferiore, mantenendo le proprie (regolamento strutturato: "concede anche"). Plasma con 🔴 e Solido con 🔵 non guadagnano nulla.
 7. **Carte coperte nel Futuro**: si rivelano entrando nel Presente. Una carta che slitta nel Futuro in flusso invertito resta scoperta. Una carta coperta non apre l'effetto manuale finché è coperta.
 8. **Fine partita**: IT ≤ 0 e Collasso Entropico si controllano dopo ogni azione; la Sincronia a fine round. Due sconfitte o due Sincronie nello stesso momento = pareggio.
-9. **Finestre di risposta**: dopo ogni carta giocata l'avversario ha la priorità; se passa la finestra si chiude, se risponde con un Evento la priorità torna all'altro, e così via. Alla Collisione la finestra parte da chi ha l'iniziativa e si chiude con due "passa" di fila. Lo stack si risolve dall'ultima carta alla prima.
+9. **Finestre di risposta**: dopo ogni carta giocata l'avversario ha la priorità; se passa la finestra si chiude, se risponde con un Evento la priorità torna all'altro, e così via. Alla Collisione la finestra parte da chi ha l'iniziativa e si chiude con due "passa" di fila. Lo stack si risolve dall'ultima carta alla prima. Se alla Collisione viene giocato un Evento, dopo la sua risoluzione la finestra si riapre completa, e il confronto PEP contro RP avviene solo con due "passa" di fila senza altre giocate (confermato da Simone il 2026-10-13).
 10. **Costruttore**: non entra nel conteggio delle 40 carte, non è mai in mano né in campo. Il suo testo si applica a mano con `usaEffetto`.
+11. **Effetto di una carta uscita dal campo**: se un Frammento viene distrutto o spostato in risposta prima che il suo effetto si risolva, l'effetto si applica lo stesso, perché la carta era in gioco quando l'avversario ha risposto (confermato da Simone il 2026-10-13).
+12. **Memoria**: è pubblica per intero e nell'ordine, cima compresa, perché rappresenta eventi già successi (confermato da Simone il 2026-10-13).
 
 ## Review Focus
 
