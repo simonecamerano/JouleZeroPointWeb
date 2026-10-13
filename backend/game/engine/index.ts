@@ -14,6 +14,9 @@ export { creaPartita } from './setup';
 export { chiDeveAgire, mosseLegali } from './legali';
 export { validaMazzo, daCardDb } from './carte';
 export type { Mazzo } from './carte';
+export { vista } from './vista';
+export type { Vista, VistaCampo, VistaGiocatore, VistaStack } from './vista';
+export { verificaInvarianti } from './invarianti';
 
 function esegui(s: StatoPartita, p: PlayerId, a: Azione): string | null {
   if (!a || typeof a !== 'object') return 'Azione sconosciuta';
