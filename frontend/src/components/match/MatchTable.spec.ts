@@ -108,6 +108,23 @@ describe( 'MatchTable', () => {
     }
   } )
 
+  it( 'una carta propria coperta mostra la faccia col marcatore, quella avversaria coperta il retro', () => {
+    const futuro = store.vista.colonne.futuro
+    futuro.push( { uid: 'A-8', owner: 'A', coperta: true, cardId: 7, segnalino: null, statoForzato: null, modifiche: [] } )
+    try {
+      const w = mount( MatchTable )
+      const colonna = w.get( '[data-test="colonna-futuro"]' )
+      const mia = colonna.get( '[data-test="meta-mia"]' )
+      expect( mia.html() ).toContain( '/img/7.png' )
+      expect( mia.get( '[data-test="marcatore-coperta"]' ).text() ).toContain( 'Coperta' )
+      const loro = colonna.get( '[data-test="meta-avversario"]' )
+      expect( loro.html() ).toContain( 'Retro_Ufficiale.png' )
+      expect( loro.find( '[data-test="marcatore-coperta"]' ).exists() ).toBe( false )
+    } finally {
+      futuro.pop()
+    }
+  } )
+
   it( 'senza stack il blocco non compare', () => {
     expect( mount( MatchTable ).find( '[data-test="stack"]' ).exists() ).toBe( false )
   } )
