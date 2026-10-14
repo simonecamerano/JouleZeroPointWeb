@@ -33,13 +33,13 @@ Punti che la spec lascia aperti, decisi qui. Ognuno vive in un solo punto del co
 
 1. **Ruoli**: chi crea la partita è il Giocatore A, chi entra con l'invito è il Giocatore B. L'iniziativa la decide il dado del motore, quindi A non è avvantaggiato.
 2. **Trasporto unico**: creazione, ingresso e mosse passano tutti dal socket con callback di conferma (ack). Nessuna rotta REST nuova.
-3. **Il `Match` salva anche i due mazzi** (`mazzi.A`, `mazzi.B` nel formato `Mazzo`): senza mazzi seed e log non bastano a rigiocare la partita. Il catalogo non viene salvato: la rigiocata usa il catalogo corrente, e `versioneScript` dice quale versione degli script era attiva.
+3. **Il `Match` salva anche i due mazzi e la fotografia delle carte usate** (`mazzi.A`, `mazzi.B` nel formato `Mazzo`, più `carte`: le `DefCarta` di tutte le carte dei due mazzi, Costruttori compresi, così come erano nel catalogo a inizio partita): senza mazzi seed e log non bastano a rigiocare la partita, e senza la fotografia la rigiocata userebbe costi e statistiche del catalogo corrente, che durante il playtest cambiano proprio per il bilanciamento. Sono al massimo 82 voci, pochi KB per partita. `versioneScript` resta e dice quale versione degli script era attiva.
 4. **`cardScripts.json` nasce vuoto** (`{}`) in questa tappa, solo per avere l'hash `versioneScript` dal primo `Match`. Gli script arrivano nella tappa 3.
 5. **Partita chiusa senza esito** (24 ore di assenza, o partita in attesa mai iniziata): se era iniziata si salva con `esito: { vincitore: null, motivo: 'chiusa' }`; se non era iniziata non si salva niente.
 6. **Partita in pausa**: le mosse vengono rifiutate con "Partita in pausa" e il timer della finestra si ferma; al rientro riparte da 20 secondi pieni.
 7. **Dopo la fine** la partita resta in memoria 10 minuti, così entrambi vedono l'esito, poi si rimuove.
 8. **GDPR**: alla cancellazione dell'account (manuale o da ritenzione) le partite **non** si cancellano, perché sono anche dell'avversario: si anonimizza il giocatore (`userId: null`, `username: null`). L'export dei dati include le partite dell'utente senza il log delle azioni dell'avversario oltre a quanto già visibile in partita (si esporta solo esito, data, round, ruolo e mazzo proprio).
-9. **Timer di finestra e decisioni**: il timeout di 20 secondi vale solo per le finestre di risposta (`stato.finestra` aperta e nessuna `stato.decisione`). Le decisioni (iniziativa, mulligan, Bonus Controllo, capienza, effetto manuale) non hanno timeout: lo dice la spec (timer per turno fuori perimetro).
+9. **Timer di finestra e decisioni**: il timeout di 20 secondi vale solo per le finestre di risposta (`stato.finestra` aperta e nessuna `stato.decisione`). Le decisioni (iniziativa, mulligan, Bonus Controllo, capienza, effetto manuale) non hanno timeout: lo dice la spec (timer per turno fuori perimetro). Rischio accettato per il playtest, vedi Premortem #4.
 
 ## Review Focus
 
@@ -73,7 +73,7 @@ Punti che la spec lascia aperti, decisi qui. Ognuno vive in un solo punto del co
 **Obiettivo misurabile:**
 - `cd backend && npx jest tests/match` verde; `cd backend && npm test` verde (compresi i test del motore 1A).
 - `cd frontend && npx vitest run` verde e `npx vue-tsc --noEmit` (o `npm run build`) senza errori.
-- Prova manuale del Task 10: due utenti in due browser completano una partita fino a un esito, e il documento `Match` corrispondente esiste in Mongo con `log` non vuoto, `seed`, `mazzi` ed `esito`.
+- Prova manuale del Task 10: due utenti in due browser completano una partita fino a un esito, e il documento `Match` corrispondente esiste in Mongo con `log` non vuoto, `seed`, `mazzi`, `carte` (una voce per ogni cardId distinto dei due mazzi) ed `esito`.
 
 **Vincoli:**
 - Quelli di "Global Constraints", in particolare: nessuna modifica a `backend/game/engine/`, stato vero e log mai inviati al client.
@@ -96,6 +96,8 @@ Punti che la spec lascia aperti, decisi qui. Ognuno vive in un solo punto del co
 2. **Timer che si accumulano o scattano su partite già chiuse** (finestra, pausa, chiusura, pulizia), con `passa` applicati alla partita sbagliata o processo che non si chiude nei test. → **mitigazione:** ogni partita ha un solo oggetto `timer` per tipo, cancellato a ogni cambio di stato e in `rimuovi`; il Task 3 usa i fake timer di Jest su tutti i casi, e `GestorePartite.chiudi()` cancella tutto (usato in `afterAll`).
 3. **Il tavolo è inutilizzabile in pratica** (carte illeggibili, non si capisce chi deve agire, il pannello manuale è troppo lento per giocare), e il playtest non parte anche se tutto è tecnicamente corretto. → **mitigazione:** barra di stato con "Tocca a te" evidenziato, carte con anteprima ingrandita al passaggio del mouse, pannello manuale con i bersagli già proposti dal campo; il Task 10 è una partita vera fino in fondo, e i problemi di usabilità trovati lì diventano voci nel registro del branch, non correzioni silenziose.
 
+4. **Partita bloccata da un giocatore connesso ma fermo** su una decisione (mulligan, effetto manuale, capienza): la pausa scatta solo alla disconnessione e le decisioni non hanno timeout (decisione 9), quindi l'avversario aspetta senza limite. → **rischio accettato** per il playtest tra persone che si conoscono: l'avversario può arrendersi o chiudere. Se nel Task 10 o nei primi playtest succede davvero, la correzione è una pausa per inattività dopo 10 minuti anche da connesso, che riusa la logica della decisione 6; va annotata nel registro del branch, non aggiunta in silenzio.
+
 **RISCHIO PIÙ ALTO:** il #1. I test di integrazione girano su `localhost` senza proxy, quindi restano verdi anche con nginx sbagliato; si scopre solo in produzione.
 
 ---
@@ -114,6 +116,7 @@ Punti che la spec lascia aperti, decisi qui. Ognuno vive in un solo punto del co
   - `catalogoDa(cards: Array<{ cardId: number; name: string; type?: string; status?: string; cost_et?: number; pep?: number; rp?: number; rarity?: string; effect?: string }>): Record<number, DefCarta>`
   - `caricaCatalogo(): Promise<Record<number, DefCarta>>`
   - `mazzoDaDeck(deck: { cards: unknown; costruttoreId: unknown }): Mazzo | string` (stringa = errore leggibile)
+  - `carteUsate(catalogo: Record<number, DefCarta>, mazzi: Mazzo[]): Record<number, DefCarta>` (fotografia delle carte dei mazzi, Costruttori compresi)
   - `VERSIONE_SCRIPT: string` (sha256 esadecimale, primi 12 caratteri, di `cardScripts.json`)
   - `VERSIONE_REGOLAMENTO = '6.0'`
   - `Match` (modello Mongoose) e `IMatch`, con `VoceLogMatch { t: Date; giocatore: PlayerId | 'server'; azione: unknown }`
@@ -133,9 +136,9 @@ Il branch esiste già (creato da `feature/motore-regole-1a` insieme a questo pia
 `backend/tests/match/catalogo.test.ts`:
 
 ```ts
-import { catalogoDa, mazzoDaDeck, VERSIONE_SCRIPT } from '../../game/catalogo';
+import { carteUsate, catalogoDa, mazzoDaDeck, VERSIONE_SCRIPT } from '../../game/catalogo';
 import { validaMazzo } from '../../game/engine';
-import { catalogoProva } from '../game/helpers';
+import { catalogoProva, mazzoProva } from '../game/helpers';
 
 describe('catalogo', () => {
   test('catalogoDa converte le carte del database e scarta quelle di tipo sconosciuto', () => {
@@ -171,6 +174,20 @@ describe('mazzoDaDeck', () => {
     [{ cards: [{ cardId: 1, count: 500 }], costruttoreId: 100 }, 'Mazzo non leggibile'],
   ])('rifiuta %j', (deck, errore) => {
     expect(mazzoDaDeck(deck as never)).toBe(errore);
+  });
+});
+
+describe('carteUsate', () => {
+  test('tiene solo le carte dei mazzi, Costruttori compresi, come copie indipendenti', () => {
+    const cat = catalogoProva();
+    const m = mazzoProva();
+    const foto = carteUsate(cat, [m, m]);
+    const attesi = new Set([...m.carte, m.costruttore]);
+    expect(Object.keys(foto).map(Number).sort((a, b) => a - b)).toEqual([...attesi].sort((a, b) => a - b));
+    for (const id of attesi) expect(foto[id]).toEqual(cat[id]);
+    // Una modifica successiva al catalogo non deve cambiare la fotografia già presa.
+    (cat[m.carte[0]] as { costo: number }).costo = 999;
+    expect(foto[m.carte[0]].costo).not.toBe(999);
   });
 });
 ```
@@ -234,13 +251,24 @@ export function mazzoDaDeck(deck: { cards: unknown; costruttoreId: unknown }): M
   }
   return { carte, costruttore: deck.costruttoreId as number };
 }
+
+/** Fotografia delle carte usate dai mazzi, per rigiocare la partita anche dopo che il catalogo cambia. */
+export function carteUsate(catalogo: Record<number, DefCarta>, mazzi: Mazzo[]): Record<number, DefCarta> {
+  const out: Record<number, DefCarta> = {};
+  for (const m of mazzi) {
+    for (const id of [...m.carte, m.costruttore]) {
+      if (catalogo[id] && !out[id]) out[id] = structuredClone(catalogo[id]);
+    }
+  }
+  return out;
+}
 ```
 
 `backend/models/Match.ts`:
 
 ```ts
 import mongoose, { Document, Model, Schema } from 'mongoose';
-import type { Mazzo, PlayerId } from '../game/engine';
+import type { DefCarta, Mazzo, PlayerId } from '../game/engine';
 
 export interface VoceLogMatch {
   t: Date;
@@ -259,6 +287,7 @@ export interface IMatch extends Document {
   codice: string;
   giocatori: GiocatoreMatch[];
   mazzi: Record<PlayerId, Mazzo>;
+  carte: Record<number, DefCarta>;
   seed: number;
   versioneRegolamento: string;
   versioneScript: string;
@@ -281,6 +310,7 @@ const matchSchema = new Schema<IMatch>({
     deckId: { type: String, required: true },
   }],
   mazzi: { type: Schema.Types.Mixed, required: true },
+  carte: { type: Schema.Types.Mixed, required: true },
   seed: { type: Number, required: true },
   versioneRegolamento: { type: String, required: true },
   versioneScript: { type: String, required: true },
@@ -339,6 +369,7 @@ export interface PartitaSalvata {
   codice: string;
   giocatori: { ruolo: PlayerId; userId: string; username: string; deckId: string }[];
   mazzi: Record<PlayerId, Mazzo>;
+  carte: Record<number, DefCarta>;
   seed: number;
   versioneRegolamento: string;
   versioneScript: string;
@@ -560,7 +591,7 @@ import {
   Azione, applica, arrendi, chiDeveAgire, creaPartita, DefCarta, Mazzo, mosseLegali, PlayerId,
   StatoPartita, validaMazzo, vista, Vista,
 } from './engine';
-import { VERSIONE_REGOLAMENTO, VERSIONE_SCRIPT } from './catalogo';
+import { carteUsate, VERSIONE_REGOLAMENTO, VERSIONE_SCRIPT } from './catalogo';
 import type { VoceLogMatch } from '../models/Match';
 
 export interface Utente { userId: string; username: string }
@@ -580,6 +611,7 @@ export interface PartitaSalvata {
   codice: string;
   giocatori: { ruolo: PlayerId; userId: string; username: string; deckId: string }[];
   mazzi: Record<PlayerId, Mazzo>;
+  carte: Record<number, DefCarta>;
   seed: number;
   versioneRegolamento: string;
   versioneScript: string;
@@ -802,6 +834,7 @@ export class GestorePartite {
         return { ruolo, userId: g.userId, username: g.username, deckId: g.deckId };
       }),
       mazzi: { A: p.posti.A!.mazzo, B: p.posti.B!.mazzo },
+      carte: carteUsate(p.catalogo, [p.posti.A!.mazzo, p.posti.B!.mazzo]),
       seed: p.seed,
       versioneRegolamento: VERSIONE_REGOLAMENTO,
       versioneScript: VERSIONE_SCRIPT,
@@ -1334,6 +1367,7 @@ describe('socket delle partite', () => {
     expect(m!.esito).toEqual({ vincitore: 'B', motivo: 'abbandono' });
     expect(m!.giocatori.find((g) => g.ruolo === 'A')!.userId).toBe(a.id);
     expect(m!.mazzi.A.carte).toHaveLength(40);
+    expect(Object.keys(m!.carte).length).toBeGreaterThan(0);
     expect(m!.log.length).toBeGreaterThan(0);
   });
 });
@@ -1551,6 +1585,7 @@ async function partita() {
       { ruolo: 'B', userId: 'u2', username: 'bob', deckId: 'd2' },
     ],
     mazzi: { A: mazzoProva(), B: mazzoProva() },
+    carte: {},
     seed: 1, versioneRegolamento: '6.0', versioneScript: 'abcdef012345',
     esito: { vincitore: 'B', motivo: 'collasso' }, durata: 1000, round: 7,
     log: [{ t: new Date(), giocatore: 'A', azione: { tipo: 'passaTurno' } }],
@@ -1654,9 +1689,10 @@ In `frontend/src/views/PrivacyView.vue`, nella sezione che elenca i dati trattat
       <p>
         Quando giochi una partita online registriamo il tuo nome utente, il mazzo usato, le mosse
         della partita e il risultato. Servono a far funzionare la partita e a studiare il bilanciamento
-        delle carte. Le partite compaiono nell'export dei tuoi dati. Se cancelli l'account, il tuo nome
-        viene tolto dalle partite giocate, che restano in forma anonima perché appartengono anche al tuo
-        avversario.
+        delle carte. Conserviamo le partite per la durata della fase di test del gioco: quando si chiude,
+        le cancelliamo o le riduciamo a statistiche aggregate. Le partite compaiono nell'export dei tuoi
+        dati. Se cancelli l'account, il tuo nome viene tolto dalle partite giocate, che restano senza il
+        tuo nome perché appartengono anche al tuo avversario.
       </p>
 ```
 
