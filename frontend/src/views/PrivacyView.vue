@@ -72,7 +72,10 @@
         (Diritto all'Oblio) la cancellazione è immediata e comprende anche le
         conversazioni del Terminale. Le copie contenute nei nostri backup
         vengono rimosse nei normali cicli di rotazione, entro 21 giorni dalla
-        cancellazione. Alcune
+        cancellazione. Le partite online fanno eccezione: alla cancellazione
+        dell'account non vengono cancellate ma anonimizzate, togliendo il nome
+        utente e il riferimento all'account (vedi il paragrafo "Partite
+        online"). Alcune
         creazioni originariamente impostate su "Pubbliche", qualora clonate da
         altri giocatori, potrebbero perdere l'ancoraggio al nome utente
         originale ma restare sotto forma algoritmica anonimizzata in base alla
