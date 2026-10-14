@@ -80,8 +80,10 @@ function cartaCliccata( uid: string ) {
     </div>
 
     <MatchHand class="tavolo__mano" :carte="g(io).mano ?? []" @carta="cartaCliccata" />
-    <MatchDecisionPanel class="tavolo__pannello" />
-    <MatchManualPanel :bersaglio="bersaglio" />
+    <div data-test="area-pannello" class="tavolo__pannello">
+      <MatchDecisionPanel />
+      <MatchManualPanel :bersaglio="bersaglio" />
+    </div>
     <MatchLog class="tavolo__log" :voci="v.log" />
 
     <p class="tavolo__ruota">Ruota il dispositivo in orizzontale per giocare.</p>
@@ -98,7 +100,7 @@ function cartaCliccata( uid: string ) {
 .tavolo__barra { grid-area: barra; }
 .tavolo__mano-avv { grid-area: manoavv; display: flex; align-items: center; justify-content: center; gap: .5rem; }
 .tavolo__mano { grid-area: mano; }
-.tavolo__pannello { grid-area: pannello; }
+.tavolo__pannello { grid-area: pannello; display: flex; flex-direction: column; gap: .5rem; }
 .tavolo__stack { grid-area: stack; display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .3rem; background: #0b0e1acc; border-radius: .5rem; }
 .tavolo__stack-titolo { font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8; }
 .tavolo__stack .avversario :deep(img) { outline: 2px solid #f6ad55; }

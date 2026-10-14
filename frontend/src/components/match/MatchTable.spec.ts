@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -149,6 +150,17 @@ describe( 'MatchTable', () => {
       await w.get( '[data-test="stack"] [data-uid="B-9"]' ).trigger( 'click' )
       await w.get( '[data-test="annulla"]' ).trigger( 'click' )
       expect( store.invia ).toHaveBeenCalledWith( { tipo: 'base', base: { op: 'annulla', uid: 'B-9' } } )
+    } )
+
+    it( 'il pannello manuale sta nell area pannello della griglia, in flusso e non fixed', () => {
+      const w = mount( MatchTable )
+      const area = w.get( '[data-test="area-pannello"]' )
+      expect( area.classes() ).toContain( 'tavolo__pannello' )
+      const manuale = area.get( '.manuale' )
+      expect( manuale.classes() ).not.toContain( 'fixed' )
+      const css = readFileSync( 'src/components/match/MatchManualPanel.vue', 'utf8' )
+      expect( css ).not.toMatch( /position:\s*fixed/ )
+      expect( readFileSync( 'src/components/match/MatchDecisionPanel.vue', 'utf8' ) ).not.toMatch( /position:\s*fixed/ )
     } )
 
     it( 'fuori da effettoManuale il click in mano seleziona come prima', async () => {

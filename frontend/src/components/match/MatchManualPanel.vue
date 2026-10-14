@@ -108,7 +108,7 @@ const suBersaglio = ( f: ( uid: string ) => AzioneBase ) => { if ( props.bersagl
 </template>
 
 <style scoped>
-.manuale { position: fixed; right: 17rem; bottom: 1rem; width: min(30rem, 90vw); max-height: 70vh; overflow-y: auto; padding: 1rem; background: #0b0e1af2; border: 1px solid #5c6bff88; border-radius: .6rem; z-index: 30; }
+.manuale { max-height: 30vh; overflow-y: auto; padding: .6rem 1rem; background: #0b0e1af2; border: 1px solid #5c6bff88; border-radius: .6rem; }
 .manuale__testo { white-space: pre-line; font-style: italic; }
 .manuale__gruppo { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin: .4rem 0; }
 .manuale__fatto { width: 100%; margin-top: .5rem; }
