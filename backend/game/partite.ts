@@ -21,7 +21,7 @@ export interface Aggiornamento {
 
 export interface PartitaSalvata {
   codice: string;
-  giocatori: { ruolo: PlayerId; userId: string; username: string; deckId: string }[];
+  giocatori: { ruolo: PlayerId; userId: string | null; username: string | null; deckId: string }[];
   mazzi: Record<PlayerId, Mazzo>;
   carte: Record<number, DefCarta>;
   seed: number;

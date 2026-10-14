@@ -56,7 +56,7 @@ app.set('query parser', (str: string) => {
 /**
  * --- CORE MIDDLEWARE CONFIGURATION ---
  */
-const allowedOrigins = [
+export const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://www.joulezeropoint.com',
   'https://joulezeropoint.com',

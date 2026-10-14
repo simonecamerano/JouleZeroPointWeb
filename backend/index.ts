@@ -1,4 +1,6 @@
+import http from 'http';
 import app from './app';
+import { initSocket } from './game/socket';
 import connectDB from './config/db';
 import { initRetentionTask } from './tasks/retentionTask';
 import { seedNewsImages } from './config/seedNewsImages';
@@ -30,8 +32,10 @@ const startServer = async () => {
     // only backup those files have.
     seedNewsImages();
 
-    // 4. Activate Application Portal
-    const server = app.listen(PORT, () => {
+    // 4. Activate Application Portal (HTTP + Socket.IO on the same server)
+    const server = http.createServer(app);
+    initSocket(server);
+    server.listen(PORT, () => {
       logger.info(`VIGIL_SYSTEM: Node operational on frequency ${PORT} in ${process.env.NODE_ENV} mode.`);
     });
 
