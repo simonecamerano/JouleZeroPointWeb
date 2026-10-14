@@ -121,6 +121,8 @@ export class GestorePartite {
     clearTimeout(p.timer.chiusura);
     p.timer.chiusura = undefined;
     this.dopoCambio(p);
+    // Se A ha chiuso la scheda mentre aspettava, la partita parte con A assente: pausa e chiusura vanno armate ora.
+    if (!this.tuttiPresenti(p)) this.armaAssenza(p);
     return ok({ ruolo: 'B' });
   }
 
@@ -177,8 +179,36 @@ export class GestorePartite {
     return ruolo ? this.aggiornamento(p, ruolo) : null;
   }
 
-  connesso(_codice: string, _userId: string): void {}
-  disconnesso(_codice: string, _userId: string): void {}
+  connesso(codice: string, userId: string): void {
+    const p = this.partite.get(codice);
+    if (!p) return;
+    const ruolo = this.ruoloDi(p, userId);
+    if (!ruolo) return;
+    p.posti[ruolo]!.connessioni += 1;
+    if (!this.tuttiPresenti(p)) return;
+    clearTimeout(p.timer.pausa);
+    p.timer.pausa = undefined;
+    if (p.stato && !p.stato.esito) {
+      clearTimeout(p.timer.chiusura);
+      p.timer.chiusura = undefined;
+    }
+    if (p.inPausa) {
+      p.inPausa = false;
+      this.programmaFinestra(p);
+      this.notificaTutti(p);
+    }
+  }
+
+  disconnesso(codice: string, userId: string): void {
+    const p = this.partite.get(codice);
+    if (!p) return;
+    const ruolo = this.ruoloDi(p, userId);
+    if (!ruolo) return;
+    const posto = p.posti[ruolo]!;
+    posto.connessioni = Math.max(0, posto.connessioni - 1);
+    if (posto.connessioni > 0) return;
+    this.armaAssenza(p);
+  }
 
   chiudi(): void {
     for (const p of this.partite.values()) this.fermaTimer(p);
@@ -191,6 +221,24 @@ export class GestorePartite {
     if (p.posti.A?.userId === userId) return 'A';
     if (p.posti.B?.userId === userId) return 'B';
     return null;
+  }
+
+  private tuttiPresenti(p: Partita): boolean {
+    return (['A', 'B'] as PlayerId[]).every((r) => !p.posti[r] || p.posti[r]!.connessioni > 0);
+  }
+
+  /** Arma pausa (10 minuti) e chiusura (24 ore) di una partita in corso con almeno un posto vuoto di connessioni. */
+  private armaAssenza(p: Partita): void {
+    if (!p.stato || p.stato.esito) return;
+    if (!p.timer.pausa) {
+      p.timer.pausa = setTimeout(() => {
+        p.timer.pausa = undefined;
+        p.inPausa = true;
+        this.programmaFinestra(p);
+        this.notificaTutti(p);
+      }, PAUSA_MS);
+    }
+    if (!p.timer.chiusura) p.timer.chiusura = setTimeout(() => this.chiudiSenzaEsito(p), CHIUSURA_MS);
   }
 
   private statoTavolo(p: Partita): StatoTavolo {
@@ -234,6 +282,25 @@ export class GestorePartite {
     clearTimeout(p.timer.finestra);
     p.timer.finestra = undefined;
     p.scadenzaFinestra = null;
+    const s = p.stato;
+    if (!s || s.esito || p.inPausa || !s.finestra || s.decisione) return;
+    const chi = chiDeveAgire(s);
+    if (!chi) return;
+    p.scadenzaFinestra = Date.now() + this.o.timeoutFinestraMs;
+    p.timer.finestra = setTimeout(() => {
+      p.timer.finestra = undefined;
+      if (!p.stato || chiDeveAgire(p.stato) !== chi || !p.stato.finestra) return;
+      let r: ReturnType<typeof applica>;
+      try {
+        r = applica(p.stato, chi, { tipo: 'passa' });
+      } catch {
+        return;
+      }
+      if (!r.ok) return;
+      p.stato = r.stato;
+      p.log.push({ t: new Date(), giocatore: 'server', azione: { tipo: 'passa', per: chi, motivo: 'timeout' } });
+      this.dopoCambio(p);
+    }, this.o.timeoutFinestraMs);
   }
 
   private termina(p: Partita, esito: PartitaSalvata['esito']): void {
