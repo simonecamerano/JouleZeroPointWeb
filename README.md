@@ -126,6 +126,24 @@ npm run dev
 
 ---
 
+## 🎲 Partita online (in sviluppo, branch `feature/rete-tavolo-1b`)
+
+Due utenti loggati giocano 1 contro 1 su `/partita`: il motore delle regole gira sul server, Socket.IO fa da trasporto (path `/socket.io/`, stesso server di Express) e il tavolo mostra a ciascuno solo la propria vista.
+
+Avvio in locale:
+1. Backend e Mongo: `docker compose up -d --build` oppure `cd backend && npm run dev` con un `MONGODB_URI` di sviluppo. Usa un database di prova, non quello di produzione.
+2. Carte nel database: `docker exec -it joule-backend node scripts/seedCards.js` (oppure `node scripts/seedCards.js` dopo `npm run build`).
+3. Frontend: `cd frontend && npm run dev` (porta 5174, proxy `/api` e `/socket.io` con WebSocket verso la 3000), oppure il container nginx su `http://localhost:5174`.
+4. Servono due utenti, ciascuno con un mazzo valido dal deckbuilder (40 carte + 1 Costruttore). Il primo crea la partita da `/partita` e condivide il link, il secondo entra dal link.
+
+Variabili: `MATCH_WINDOW_TIMEOUT_MS` (default `20000`) è il tempo della finestra di risposta prima del `passa` automatico.
+
+Nota: l'immagine `mongo:latest` (9.x) non parte su kernel Linux 6.19 o superiori; in quel caso usare `mongo:8.2.1`.
+
+Controllo dopo il deploy: `curl "https://joulezeropoint.com/socket.io/?EIO=4&transport=polling"` deve rispondere 200.
+
+---
+
 ## 🧪 Tech Stack
 
 ### Frontend
