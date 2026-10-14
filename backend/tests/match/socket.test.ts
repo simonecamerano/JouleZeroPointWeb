@@ -19,7 +19,7 @@ let gestore: GestorePartite;
 const aperti: Socket[] = [];
 
 /** `unica`: carta messa al posto della 14, per riconoscere un mazzo dall'altro nei test sui segreti. */
-async function utente(username: string, unica = 14) {
+async function utente(username: string, unica = 14, mazzo?: number[]) {
   const u = await User.create({
     username, usernameDisplay: username, email: `${username}@example.test`, password: 'Password123!',
     isVerified: true, privacyAccepted: true,
@@ -27,6 +27,10 @@ async function utente(username: string, unica = 14) {
   const token = jwt.sign({ id: u._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
   const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((cardId) => ({ cardId, count: 3 }));
   cards.push({ cardId: unica, count: 1 });
+  if (mazzo) {
+    cards.length = 0;
+    for (const cardId of new Set(mazzo)) cards.push({ cardId, count: mazzo.filter((c) => c === cardId).length });
+  }
   const deck = await Deck.create({ name: 'Prova', creator: username, cards, costruttoreId: 100 });
   return { id: String(u._id), token, deckId: String(deck._id) };
 }
@@ -44,6 +48,14 @@ const emetti = <T = { ok: boolean; errore?: string; codice?: string; ruolo?: str
   new Promise<T>((resolve) => s.emit(ev, dati, resolve));
 
 const prossimo = (s: Socket) => new Promise<Aggiornamento>((resolve) => s.once('partita:aggiornamento', resolve));
+
+/** Rallenta la lettura del mazzo: l'handler resta in attesa mentre il test chiude il socket. */
+function rallentaLetturaMazzi(ms: number) {
+  const originale = Deck.findOne.bind(Deck) as (...a: unknown[]) => { lean: () => Promise<unknown> };
+  return jest.spyOn(Deck, 'findOne').mockImplementation(((...args: unknown[]) => ({
+    lean: async () => { await new Promise((r) => setTimeout(r, ms)); return originale(...args).lean(); },
+  })) as never);
+}
 
 const connessioniDi = (codice: string, ruolo: 'A' | 'B') =>
   (gestore as unknown as { partite: Map<string, { posti: Record<string, { connessioni: number }> }> })
@@ -103,17 +115,33 @@ describe('socket delle partite', () => {
   });
 
   test('nessun segreto nel payload: né catalogo, né carte coperte dell avversario', async () => {
-    // La 19 sta solo nel mazzo di bob: all'inizio è nella sua mano o nel suo mazzo, quindi coperta per alice.
-    const { agA, agB } = await partitaIniziata(19);
-    const perAlice = JSON.stringify(agA);
-    expect(perAlice).not.toContain('"carte"');
-    expect(perAlice).not.toContain('"rng"');
-    expect(perAlice).not.toContain('"cardId":19');
-    const bobLaVede = JSON.stringify(agB.vista!.giocatori.B).includes('"cardId":19');
-    const inMazzo = agB.vista!.giocatori.B.carteFuturo > 0;
-    expect(bobLaVede || inMazzo).toBe(true); // la carta esiste davvero nel gioco di bob
-    expect(JSON.stringify(agB)).not.toContain('"carte"');
-    expect(JSON.stringify(agB)).not.toContain('"rng"');
+    // Alice usa le carte 1-14, bob anche le 15-19: una carta 15-19 nella mano di bob è certamente coperta per alice.
+    const triple = (ids: number[]) => ids.flatMap((c) => [c, c, c]);
+    const alice = [...triple([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]), 14];
+    const bob = [...triple([15, 16, 17, 18, 19]), ...triple([1, 2, 3, 4, 5, 6, 7, 8]), 9];
+    const a = await utente('alice', 14, alice);
+    const b = await utente('bob', 14, bob);
+    const sa = await socket(a.token);
+    const sb = await socket(b.token);
+    const esclusive = [15, 16, 17, 18, 19];
+    for (let tentativo = 0; tentativo < 8; tentativo++) {
+      const codice = (await emetti(sa, 'partita:crea', { deckId: a.deckId })).codice!;
+      const [agA, agB] = await Promise.all([prossimo(sa), prossimo(sb), emetti(sb, 'partita:entra', { codice, deckId: b.deckId })]);
+      const perAlice = JSON.stringify(agA);
+      expect(perAlice).not.toContain('"carte"');
+      expect(perAlice).not.toContain('"rng"');
+      expect(JSON.stringify(agB)).not.toContain('"carte"');
+      expect(JSON.stringify(agB)).not.toContain('"rng"');
+      const mano = agB.vista!.giocatori.B.mano!;
+      for (const c of mano) expect(perAlice).not.toContain(`"uid":"${c.uid}"`);
+      // Un cardId che bob ha anche in memoria o orizzonte è pubblico: non prova nulla.
+      const pubblici = new Set([...agB.vista!.giocatori.B.memoria, ...agB.vista!.giocatori.B.orizzonte].map((c) => c.cardId));
+      const coperte = mano.filter((c) => esclusive.includes(c.cardId) && !pubblici.has(c.cardId));
+      for (const c of coperte) expect(perAlice).not.toContain(`"cardId":${c.cardId}`);
+      await emetti(sa, 'partita:arrenditi', { codice });
+      if (coperte.length > 0) return;
+    }
+    throw new Error('nessuna carta esclusiva di bob in mano in 8 partite: il test non ha verificato nulla');
   });
 
   test('mazzo di un altro utente: rifiutato', async () => {
@@ -128,7 +156,7 @@ describe('socket delle partite', () => {
     const b = await utente('bob');
     const sa = await socket(a.token);
     const sb = await socket(b.token);
-    const { codice } = await emetti(sa, 'partita:crea', { deckId: a.deckId });
+    const codice = (await emetti(sa, 'partita:crea', { deckId: a.deckId })).codice!;
     await Deck.deleteOne({ _id: a.deckId });
     expect(await emetti(sb, 'partita:entra', { codice, deckId: b.deckId })).toEqual({ ok: true, ruolo: 'B' });
     await Deck.updateOne({ _id: b.deckId }, { $set: { cards: [{ cardId: 2, count: 1 }] } });
@@ -256,5 +284,37 @@ describe('socket delle partite', () => {
     expect(gA.username).toBe('alice');
     expect(gB.userId).toBeNull();
     expect(gB.username).toBeNull();
+  });
+
+  test('disconnessione durante partita:entra, senza attendere l ack: nessuna connessione fantasma', async () => {
+    const a = await utente('alice');
+    const b = await utente('bob');
+    const sa = await socket(a.token);
+    const sb = await socket(b.token);
+    const codice = (await emetti(sa, 'partita:crea', { deckId: a.deckId })).codice!;
+    const spia = rallentaLetturaMazzi(300);
+    sb.emit('partita:entra', { codice, deckId: b.deckId });
+    await new Promise((r) => setTimeout(r, 100));
+    sb.disconnect();
+    await new Promise((r) => setTimeout(r, 600));
+    spia.mockRestore();
+    expect(connessioniDi(codice, 'B')).toBe(0);
+    expect(connessioniDi(codice, 'A')).toBe(1);
+  });
+
+  test('disconnessione durante partita:crea: la partita esiste ma il creatore risulta assente', async () => {
+    const a = await utente('alice');
+    const sa = await socket(a.token);
+    const prima = new Set((gestore as unknown as { partite: Map<string, unknown> }).partite.keys());
+    const spia = rallentaLetturaMazzi(300);
+    sa.emit('partita:crea', { deckId: a.deckId });
+    await new Promise((r) => setTimeout(r, 100));
+    sa.disconnect();
+    await new Promise((r) => setTimeout(r, 600));
+    spia.mockRestore();
+    const mappa = (gestore as unknown as { partite: Map<string, unknown> }).partite;
+    const nuovi = [...mappa.keys()].filter((k) => !prima.has(k));
+    expect(nuovi).toHaveLength(1);
+    expect(connessioniDi(nuovi[0], 'A')).toBe(0);
   });
 });

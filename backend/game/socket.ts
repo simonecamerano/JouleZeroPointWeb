@@ -78,7 +78,8 @@ export function initSocket(
     const utente = { userId: s.userId, username: s.username };
 
     const segui = (codice: string) => {
-      if (s.partite.has(codice)) return;
+      // Se il socket si e' disconnesso durante un await, l'evento disconnect e' gia' passato: contarlo ora lascerebbe una connessione fantasma.
+      if (!socket.connected || s.partite.has(codice)) return;
       s.partite.add(codice);
       gestore.connesso(codice, s.userId);
     };
