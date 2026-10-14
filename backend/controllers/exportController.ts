@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import Deck from '../models/Deck';
 import logger from '../config/logger';
+import { partiteDaEsportare } from '../game/privacyMatch';
 
 /**
  * Export Controller (TypeScript).
@@ -35,7 +36,10 @@ export const exportUserData = async (req: any, res: Response) => {
     const decks = await Deck.find({ creator: user.username.toLowerCase() });
     logger.debug(`EXPORT_PROCESS: Found ${decks.length} decks for ${user.username}`);
 
-    // 3. Aggregate Data Structure
+    // 3. Fetch saved online matches (own deck and own moves only, no opponent data)
+    const partite = await partiteDaEsportare(String(user._id));
+
+    // 4. Aggregate Data Structure
     const exportPackage = {
       metadata: {
         application: "Joule: Zero Point",
@@ -63,7 +67,9 @@ export const exportUserData = async (req: any, res: Response) => {
           cards: d.cards || [],
           is_public: d.isPublic ?? false,
           created_at: (d as any).createdAt || new Date()
-        }))
+        })),
+        matches_count: partite.length,
+        matches: partite
       }
     };
 

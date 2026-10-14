@@ -28,6 +28,17 @@
         richiede la maggiore età per l'utilizzo del servizio.
       </p>
 
+      <h3>Partite online</h3>
+      <p>
+        Quando giochi una partita online registriamo il tuo nome utente, il mazzo usato, le mosse
+        della partita e il risultato. Servono a far funzionare la partita e a studiare il bilanciamento
+        delle carte. Conserviamo le partite per la durata della fase di test del gioco: quando si chiude,
+        le cancelliamo o le riduciamo a statistiche aggregate. Le partite compaiono nell'export dei tuoi
+        dati, con il tuo mazzo e le tue mosse (non quelle del tuo avversario). Se cancelli l'account, il
+        tuo nome viene tolto dalle partite giocate, che restano senza il tuo nome perché appartengono
+        anche al tuo avversario.
+      </p>
+
       <h2>2. Finalità di Computazione e Trattamento</h2>
       <p>
         L'indirizzo e-mail e la password servono unicamente ad autenticare

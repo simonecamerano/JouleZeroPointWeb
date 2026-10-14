@@ -6,6 +6,7 @@ import User, { IUser } from '../models/User';
 import Deck from '../models/Deck';
 import Message from '../models/Message';
 import logger from '../config/logger';
+import { anonimizzaPartite } from '../game/privacyMatch';
 import * as emailService from '../services/emailService';
 
 /**
@@ -178,6 +179,9 @@ export const deleteAccount = async (req: any, res: Response) => {
       // personal data behind after an erasure request.
       const messageResult = await Message.deleteMany({ userId: user._id });
       logger.info(`VIGIL_SYSTEM: ${messageResult.deletedCount} terminal messages for ${user.username} have been purged.`);
+
+      // Saved matches also belong to the opponent: they stay, without the name.
+      await anonimizzaPartite(String(user._id));
 
       // Also remove user votes from other creators' decks
       await Deck.updateMany({}, { $pull: { votes: user.username } });

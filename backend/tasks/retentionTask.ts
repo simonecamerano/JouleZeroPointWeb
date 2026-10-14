@@ -3,6 +3,7 @@ import User from '../models/User';
 import Message from '../models/Message';
 import Deck from '../models/Deck';
 import logger from '../config/logger';
+import { anonimizzaPartite } from '../game/privacyMatch';
 
 /**
  * Retention Task: applies the conservation policy declared in the privacy
@@ -65,6 +66,7 @@ export async function purgeInactiveAccounts(dryRun = true): Promise<RetentionOut
 
     const messages = await Message.deleteMany({ userId: user._id });
     const decks = await Deck.deleteMany({ creator: usernameLower });
+    await anonimizzaPartite(String(user._id));
     await Deck.updateMany({}, { $pull: { votes: user.username } });
     await User.deleteOne({ _id: user._id });
 
