@@ -55,7 +55,7 @@ function readPersistedAuth(): PersistedAuth {
 function isProtectedPath() {
   if ( typeof window === 'undefined' ) return false
 
-  return ['/admin', '/deckbuilder', '/profile'].some( ( path ) => window.location.pathname.startsWith( path ) )
+  return ['/admin', '/deckbuilder', '/profile', '/partita'].some( ( path ) => window.location.pathname.startsWith( path ) )
 }
 
 /**

@@ -85,6 +85,18 @@ const router = createRouter( {
       meta: { requiresAuth: true }
     },
     {
+      path: '/partita',
+      name: 'partita',
+      component: () => import( '../views/MatchView.vue' ),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/partita/:codice',
+      name: 'partita-codice',
+      component: () => import( '../views/MatchView.vue' ),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/public-decks',
       name: 'public-decks',
       component: () => import( '../views/PublicDecksView.vue' )

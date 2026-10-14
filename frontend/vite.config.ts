@@ -16,7 +16,7 @@ export default defineConfig( {
         theme_color: '#0c121c',
         background_color: '#0c121c',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'any',
         start_url: '/',
         scope: '/',
         lang: 'it',
@@ -106,6 +106,11 @@ export default defineConfig( {
     host: true,
     port: 5174,
     proxy: {
+      '/socket.io': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3000',
+        changeOrigin: true,
+        ws: true,
+      },
       '/api': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
