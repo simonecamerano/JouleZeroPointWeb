@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useMatchStore } from '../../stores/matchStore'
 import { useCardStore } from '../../stores/cardStore'
 import type { PlayerId } from '../../types/match'
 import MatchCard from './MatchCard.vue'
 import MatchColumn from './MatchColumn.vue'
+import MatchDecisionPanel from './MatchDecisionPanel.vue'
 import MatchHand from './MatchHand.vue'
 import MatchLog from './MatchLog.vue'
+import MatchManualPanel from './MatchManualPanel.vue'
 import MatchPile from './MatchPile.vue'
 import MatchStatusBar from './MatchStatusBar.vue'
 import MatchThermometer from './MatchThermometer.vue'
@@ -21,7 +23,17 @@ const lui = computed<PlayerId>( () => ( io.value === 'A' ? 'B' : 'A' ) )
 const g = ( p: PlayerId ) => v.value.giocatori[p]
 const cima = ( arr: { cardId: number }[] ) => ( arr.length ? arr[arr.length - 1].cardId : null )
 
-const emit = defineEmits<{ carta: [uid: string] }>()
+// Ultimo uid cliccato sul tavolo (colonne, stack, mano durante un effetto manuale): bersaglio del pannello manuale.
+const bersaglio = ref<string | null>( null )
+
+function cartaCliccata( uid: string ) {
+  const d = v.value.decisione
+  if ( match.tocca && d?.tipo === 'capienza' ) {
+    match.invia( { tipo: 'capienza', distruggi: uid } )
+    return
+  }
+  bersaglio.value = uid
+}
 </script>
 
 <template>
@@ -40,9 +52,9 @@ const emit = defineEmits<{ carta: [uid: string] }>()
         <MatchPile titolo="Anomalia" :cima="v.anomalia?.cardId ?? null" :conteggio="v.anomalia ? 1 : 0" />
         <MatchThermometer :tp="v.tp" :flusso="v.flusso" />
       </div>
-      <MatchColumn class="g-passato" colonna="passato" :carte="v.colonne.passato" @carta="emit('carta', $event)" />
-      <MatchColumn class="g-presente" colonna="presente" :carte="v.colonne.presente" @carta="emit('carta', $event)" />
-      <MatchColumn class="g-futuro" colonna="futuro" :carte="v.colonne.futuro" @carta="emit('carta', $event)" />
+      <MatchColumn class="g-passato" colonna="passato" :carte="v.colonne.passato" @carta="cartaCliccata" />
+      <MatchColumn class="g-presente" colonna="presente" :carte="v.colonne.presente" @carta="cartaCliccata" />
+      <MatchColumn class="g-futuro" colonna="futuro" :carte="v.colonne.futuro" @carta="cartaCliccata" />
       <MatchPile class="g-costr-a" titolo="Costruttore" :cima="g(lui).costruttore.cardId" :conteggio="1" />
       <MatchPile class="g-mazzo-a" titolo="Futuro" :cima="null" coperta :conteggio="g(lui).carteFuturo" />
       <MatchPile class="g-orizzonte-b" mia titolo="Orizzonte" :cima="cima(g(io).orizzonte)" :conteggio="g(io).orizzonte.length" />
@@ -63,13 +75,14 @@ const emit = defineEmits<{ carta: [uid: string] }>()
         :attenuata="voce.annullata"
         :class="voce.controllore === io ? 'mia' : 'avversario'"
         :title="voce.annullata ? 'Annullata' : undefined"
-        @click="emit('carta', voce.uid)"
+        @click="cartaCliccata(voce.uid)"
       />
     </div>
 
-    <MatchHand class="tavolo__mano" :carte="g(io).mano ?? []" />
+    <MatchHand class="tavolo__mano" :carte="g(io).mano ?? []" @carta="cartaCliccata" />
+    <MatchDecisionPanel class="tavolo__pannello" />
+    <MatchManualPanel :bersaglio="bersaglio" />
     <MatchLog class="tavolo__log" :voci="v.log" />
-    <slot />
 
     <p class="tavolo__ruota">Ruota il dispositivo in orizzontale per giocare.</p>
   </section>
@@ -78,13 +91,14 @@ const emit = defineEmits<{ carta: [uid: string] }>()
 <style scoped>
 .tavolo {
   display: grid; gap: .5rem; padding: .5rem; min-height: 100vh;
-  grid-template-columns: 1fr 16rem; grid-template-rows: auto auto 1fr auto auto;
-  grid-template-areas: 'barra barra' 'manoavv log' 'griglia log' 'stack log' 'mano log';
+  grid-template-columns: 1fr 16rem; grid-template-rows: auto auto 1fr auto auto auto;
+  grid-template-areas: 'barra barra' 'manoavv log' 'griglia log' 'stack log' 'pannello log' 'mano log';
   background: radial-gradient(ellipse at center, #10142a, #04050b);
 }
 .tavolo__barra { grid-area: barra; }
 .tavolo__mano-avv { grid-area: manoavv; display: flex; align-items: center; justify-content: center; gap: .5rem; }
 .tavolo__mano { grid-area: mano; }
+.tavolo__pannello { grid-area: pannello; }
 .tavolo__stack { grid-area: stack; display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .3rem; background: #0b0e1acc; border-radius: .5rem; }
 .tavolo__stack-titolo { font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8; }
 .tavolo__stack .avversario :deep(img) { outline: 2px solid #f6ad55; }

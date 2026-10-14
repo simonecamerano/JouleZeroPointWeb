@@ -4,9 +4,17 @@ import type { Carta } from '../../types/match'
 import MatchCard from './MatchCard.vue'
 
 defineProps<{ carte: Carta[] }>()
+const emit = defineEmits<{ carta: [uid: string] }>()
 const match = useMatchStore()
 
+// Durante un effetto manuale il click in mano sceglie il bersaglio (es. `scarta`), non gioca la carta.
+const inEffettoManuale = () => match.tocca && match.vista?.decisione?.tipo === 'effettoManuale'
+
 function click( c: Carta ) {
+  if ( inEffettoManuale() ) {
+    emit( 'carta', c.uid )
+    return
+  }
   const mosse = match.mosseDi( c.uid )
   if ( !mosse.length ) return
   // Evento o Anomalia: una sola mossa senza colonna, si gioca subito.
@@ -26,7 +34,7 @@ function click( c: Carta ) {
       :key="c.uid"
       :data-uid="c.uid"
       :card-id="c.cardId"
-      :attenuata="match.mosseDi(c.uid).length === 0"
+      :attenuata="!inEffettoManuale() && match.mosseDi(c.uid).length === 0"
       :selezionata="match.selezionata === c.uid"
       @click="click(c)"
     />

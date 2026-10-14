@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { reactive } from 'vue'
@@ -90,7 +90,7 @@ describe( 'MatchTable', () => {
     expect( w.get( '[data-test="registro"]' ).text() ).toContain( 'Giocatore A gioca Carta 1 nel Presente' )
   } )
 
-  it( 'lo stack delle risposte mostra le carte (coperta col retro) e il click emette il bersaglio', async () => {
+  it( 'lo stack delle risposte mostra le carte (coperta col retro)', async () => {
     store.vista.stack = [
       { uid: 'B-9', cardId: 2, controllore: 'B', annullata: false },
       { uid: 'A-9', cardId: null, controllore: 'A', annullata: false },
@@ -101,8 +101,6 @@ describe( 'MatchTable', () => {
       expect( stack.findAll( '.match-card' ) ).toHaveLength( 2 )
       expect( stack.get( '[data-uid="B-9"]' ).html() ).toContain( '/img/2.png' )
       expect( stack.get( '[data-uid="A-9"]' ).html() ).toContain( 'Retro_Ufficiale.png' )
-      await stack.get( '[data-uid="B-9"]' ).trigger( 'click' )
-      expect( w.emitted( 'carta' )![0] ).toEqual( ['B-9'] )
     } finally {
       store.vista.stack = []
     }
@@ -127,5 +125,38 @@ describe( 'MatchTable', () => {
 
   it( 'senza stack il blocco non compare', () => {
     expect( mount( MatchTable ).find( '[data-test="stack"]' ).exists() ).toBe( false )
+  } )
+
+  describe( 'effetto manuale: bersaglio da mano e stack', () => {
+    beforeEach( () => {
+      store.invia.mockClear()
+      store.seleziona.mockClear()
+      store.vista.decisione = { tipo: 'effettoManuale', giocatore: 'A', uid: 'A-5', origine: 'libero' }
+    } )
+    afterEach( () => { store.vista.decisione = null; store.vista.stack = [] } )
+
+    it( 'click su una carta in mano imposta il bersaglio e scarta usa quell uid', async () => {
+      const w = mount( MatchTable )
+      await w.get( '[data-test="mano-mia"] [data-uid="A-2"]' ).trigger( 'click' )
+      expect( store.seleziona ).not.toHaveBeenCalled()
+      await w.get( '[data-test="scarta"]' ).trigger( 'click' )
+      expect( store.invia ).toHaveBeenCalledWith( { tipo: 'base', base: { op: 'scarta', uid: 'A-2' } } )
+    } )
+
+    it( 'click su una carta dello stack imposta il bersaglio e annulla usa quell uid', async () => {
+      store.vista.stack = [{ uid: 'B-9', cardId: 2, controllore: 'B', annullata: false }]
+      const w = mount( MatchTable )
+      await w.get( '[data-test="stack"] [data-uid="B-9"]' ).trigger( 'click' )
+      await w.get( '[data-test="annulla"]' ).trigger( 'click' )
+      expect( store.invia ).toHaveBeenCalledWith( { tipo: 'base', base: { op: 'annulla', uid: 'B-9' } } )
+    } )
+
+    it( 'fuori da effettoManuale il click in mano seleziona come prima', async () => {
+      store.vista.decisione = null
+      const w = mount( MatchTable )
+      await w.get( '[data-test="mano-mia"] [data-uid="A-1"]' ).trigger( 'click' )
+      expect( store.seleziona ).toHaveBeenCalledWith( 'A-1' )
+      expect( w.find( '[data-test="scarta"]' ).exists() ).toBe( false )
+    } )
   } )
 } )
