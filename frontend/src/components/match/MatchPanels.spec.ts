@@ -39,6 +39,19 @@ describe( 'MatchDecisionPanel', () => {
     expect( invia ).toHaveBeenCalledWith( { tipo: 'mulligan', esegui: true } )
   } )
 
+  it( 'Arrenditi resta disponibile anche quando non tocca a te, e sparisce a partita finita', async () => {
+    store.tocca = false
+    const w = mount( MatchDecisionPanel )
+    const conferma = vi.spyOn( window, 'confirm' ).mockReturnValue( true )
+    await w.get( '[data-test="arrenditi"]' ).trigger( 'click' )
+    expect( conferma ).toHaveBeenCalled()
+    expect( arrenditi ).toHaveBeenCalled()
+    store.vista.esito = { vincitore: 'B', motivo: 'abbandono' }
+    await w.vm.$nextTick()
+    expect( w.find( '[data-test="arrenditi"]' ).exists() ).toBe( false )
+    conferma.mockRestore()
+  } )
+
   it( 'finestra di risposta: passa e conto alla rovescia', async () => {
     store.vista.finestra = { contesto: 'giocata', priorita: 'A', passi: 0, passiNecessari: 1 }
     store.agg.scadenzaFinestra = Date.now() + 15000
@@ -62,7 +75,7 @@ describe( 'MatchDecisionPanel', () => {
   it( 'non mostra nulla di azionabile quando non tocca a me', () => {
     store.tocca = false
     const w = mount( MatchDecisionPanel )
-    expect( w.find( 'button' ).exists() ).toBe( false )
+    expect( w.findAll( 'button' ).map( ( b ) => b.attributes( 'data-test' ) ) ).toEqual( ['arrenditi'] )
   } )
 
   it( 'esito finale', () => {

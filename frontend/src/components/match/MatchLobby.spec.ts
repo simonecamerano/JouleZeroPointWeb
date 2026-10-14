@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { reactive } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 
 const crea = vi.fn()
 const entra = vi.fn()
-const store = { crea, entra, errore: null as string | null, agg: null }
+const mie = vi.fn()
+const annulla = vi.fn()
+const store = reactive( { crea, entra, mie, annulla, errore: null as string | null, agg: null as unknown } )
 vi.mock( '../../stores/matchStore', () => ( { useMatchStore: () => store } ) )
 vi.mock( '../../stores/deckStore', () => ( {
   useDeckStore: () => ( {
@@ -23,7 +26,9 @@ import MatchLobby from './MatchLobby.vue'
 describe( 'MatchLobby', () => {
   beforeEach( () => {
     setActivePinia( createPinia() )
-    crea.mockReset(); entra.mockReset(); replace.mockReset()
+    crea.mockReset(); entra.mockReset(); replace.mockReset(); annulla.mockReset()
+    mie.mockReset(); mie.mockResolvedValue( [] )
+    store.agg = null
     store.errore = null
   } )
 
@@ -57,5 +62,38 @@ describe( 'MatchLobby', () => {
     await flushPromises()
     expect( w.text() ).toContain( 'La partita è già al completo' )
     expect( w.find( '[data-test="scelta-mazzo"]' ).exists() ).toBe( false )
+  } )
+
+  it( 'senza codice: elenca le partite aperte con il link per rientrare', async () => {
+    mie.mockResolvedValue( [{ codice: 'AAA', statoTavolo: 'attesa' }, { codice: 'BBB', statoTavolo: 'inCorso' }] )
+    const w = mount( MatchLobby, { props: { codice: null }, global: { stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } } } )
+    await flushPromises()
+    const lista = w.get( '[data-test="mie-partite"]' )
+    expect( lista.findAll( 'a' ).map( ( a ) => a.attributes( 'href' ) ) ).toEqual( ['/partita/AAA', '/partita/BBB'] )
+    expect( lista.text() ).toContain( 'in corso' )
+  } )
+
+  it( 'in attesa: Annulla invito chiama annulla e torna alla lobby', async () => {
+    store.agg = { codice: 'COD', statoTavolo: 'attesa' }
+    annulla.mockResolvedValue( true )
+    entra.mockResolvedValue( true )
+    const w = mount( MatchLobby, { props: { codice: 'COD' } } )
+    await flushPromises()
+    await w.get( '[data-test="annulla-invito"]' ).trigger( 'click' )
+    await flushPromises()
+    expect( annulla ).toHaveBeenCalled()
+    expect( replace ).toHaveBeenCalledWith( '/partita' )
+  } )
+
+  it( 'in attesa: se annulla fallisce resta nella pagina e mostra l errore', async () => {
+    store.agg = { codice: 'COD', statoTavolo: 'attesa' }
+    annulla.mockImplementation( async () => { store.errore = 'La partita è già iniziata'; return false } )
+    entra.mockResolvedValue( true )
+    const w = mount( MatchLobby, { props: { codice: 'COD' } } )
+    await flushPromises()
+    await w.get( '[data-test="annulla-invito"]' ).trigger( 'click' )
+    await flushPromises()
+    expect( replace ).not.toHaveBeenCalled()
+    expect( w.text() ).toContain( 'La partita è già iniziata' )
   } )
 } )

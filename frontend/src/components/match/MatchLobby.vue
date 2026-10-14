@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMatchStore } from '../../stores/matchStore'
+import { useMatchStore, type PartitaAperta } from '../../stores/matchStore'
 import { useDeckStore } from '../../stores/deckStore'
 
 const props = defineProps<{ codice: string | null }>()
@@ -13,6 +13,8 @@ const scelto = ref<string | null>( null )
 const serveMazzo = ref( props.codice === null )
 const bloccante = ref<string | null>( null )
 const copiato = ref( false )
+const mie = ref<PartitaAperta[]>( [] )
+const FASI: Record<string, string> = { attesa: 'in attesa dell\'avversario', inCorso: 'in corso', pausa: 'in pausa' }
 
 const mazzi = computed( () => decks.userDecks.map( ( d ) => {
   const n = d.cards.reduce( ( t, c ) => t + c.count, 0 )
@@ -25,6 +27,7 @@ const inAttesa = computed( () => match.agg?.statoTavolo === 'attesa' )
 onMounted( async () => {
   // Il default del backend ne restituisce 12: la lobby li vuole tutti.
   await decks.fetchUserDecks( { limit: 50 } )
+  if ( props.codice === null ) mie.value = await match.mie()
   if ( props.codice ) {
     const ok = await match.entra( props.codice )
     if ( !ok ) {
@@ -45,6 +48,10 @@ async function entra() {
   if ( await match.entra( props.codice, scelto.value ) ) serveMazzo.value = false
 }
 
+async function annulla() {
+  if ( await match.annulla() ) router.replace( '/partita' )
+}
+
 async function copia() {
   try {
     await navigator.clipboard.writeText( linkInvito.value )
@@ -59,6 +66,16 @@ async function copia() {
   <section class="lobby">
     <h1>Partita online</h1>
 
+    <div v-if="codice === null && mie.length" data-test="mie-partite">
+      <p>Le tue partite aperte:</p>
+      <ul class="lobby__mie">
+        <li v-for="p in mie" :key="p.codice">
+          <RouterLink :to="`/partita/${p.codice}`">Partita {{ p.codice }}</RouterLink>
+          <small>{{ FASI[p.statoTavolo] }}</small>
+        </li>
+      </ul>
+    </div>
+
     <div v-if="bloccante" class="lobby__errore">
       <p>{{ bloccante }}</p>
       <RouterLink to="/partita">Crea una nuova partita</RouterLink>
@@ -68,6 +85,8 @@ async function copia() {
       <p>In attesa dell'avversario. Mandagli questo link:</p>
       <code>{{ linkInvito }}</code>
       <button type="button" @click="copia">{{ copiato ? 'Copiato' : 'Copia link' }}</button>
+      <button type="button" data-test="annulla-invito" @click="annulla">Annulla invito</button>
+      <p v-if="match.errore" class="lobby__errore">{{ match.errore }}</p>
     </div>
 
     <div v-else-if="serveMazzo" data-test="scelta-mazzo">
@@ -99,6 +118,8 @@ async function copia() {
 .lobby__mazzi button { width: 100%; text-align: left; padding: .75rem 1rem; }
 .lobby__mazzi button.scelto { outline: 2px solid currentColor; }
 .lobby__mazzi small { display: block; opacity: .7; }
+.lobby__mie { list-style: none; padding: 0; display: grid; gap: .3rem; }
+.lobby__mie small { margin-left: .5rem; opacity: .7; }
 .lobby__errore { color: #ff6b6b; }
 .lobby__invito code { display: block; margin: .5rem 0; word-break: break-all; }
 </style>

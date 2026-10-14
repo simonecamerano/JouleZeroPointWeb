@@ -14,6 +14,8 @@ const FASI: Record<string, string> = {
 
 <template>
   <div data-test="barra-stato" class="barra">
+    <strong v-if="!match.connesso" data-test="connessione-persa" class="barra__avviso">Connessione persa, riconnessione…</strong>
+    <strong v-if="match.errore" data-test="errore-tavolo" class="barra__avviso">{{ match.errore }}</strong>
     <span>Round {{ v.round }}</span>
     <span>{{ FASI[v.fase] }}</span>
     <span>{{ v.flusso === 'normale' ? 'Normale' : 'Invertito' }}</span>
@@ -30,5 +32,6 @@ const FASI: Record<string, string> = {
 <style scoped>
 .barra { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; padding: .4rem .8rem; font-size: .85rem; background: #0b0e1acc; border-radius: .5rem; }
 .barra__tocca { color: #1a1300; background: #ffd36b; padding: .1rem .6rem; border-radius: .3rem; }
+.barra__avviso { flex-basis: 100%; color: #ff6b6b; }
 .barra__pausa { color: #ff6b6b; }
 </style>

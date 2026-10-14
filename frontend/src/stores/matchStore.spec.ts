@@ -114,4 +114,59 @@ describe( 'matchStore', () => {
     handlers['connect']()
     expect( emit ).not.toHaveBeenCalled()
   } )
+
+  it( 'alla riconnessione, se la partita non esiste piu, espone l errore e torna alla lobby', () => {
+    const s = useMatchStore()
+    s.connetti()
+    handlers['partita:aggiornamento']( aggiornamento() )
+    emit.mockImplementation( ( _ev, _d, ack ) => ack( { ok: false, errore: 'Partita non trovata' } ) )
+    handlers['connect']()
+    expect( s.errore ).toBe( 'Partita non trovata' )
+    expect( s.agg ).toBeNull()
+  } )
+
+  it( 'alla riconnessione con altro errore la vista resta e l errore e visibile', () => {
+    const s = useMatchStore()
+    s.connetti()
+    handlers['partita:aggiornamento']( aggiornamento() )
+    emit.mockImplementation( ( _ev, _d, ack ) => ack( { ok: false, errore: 'Non sei in questa partita' } ) )
+    handlers['connect']()
+    expect( s.errore ).toBe( 'Non sei in questa partita' )
+    expect( s.agg?.codice ).toBe( 'COD' )
+  } )
+
+  it( 'un aggiornamento valido azzera l errore', () => {
+    const s = useMatchStore()
+    s.connetti()
+    handlers['connect_error']( new Error( 'x' ) )
+    handlers['partita:aggiornamento']( aggiornamento() )
+    expect( s.errore ).toBeNull()
+  } )
+
+  it( 'annulla emette partita:annulla col codice e svuota la partita', async () => {
+    const s = useMatchStore()
+    s.connetti()
+    handlers['partita:aggiornamento']( aggiornamento( { statoTavolo: 'attesa' } ) )
+    emit.mockImplementation( ( _ev, _d, ack ) => ack( { ok: true } ) )
+    expect( await s.annulla() ).toBe( true )
+    expect( emit ).toHaveBeenCalledWith( 'partita:annulla', { codice: 'COD' }, expect.any( Function ) )
+    expect( s.agg ).toBeNull()
+  } )
+
+  it( 'annulla rifiutato: errore visibile e partita mantenuta', async () => {
+    const s = useMatchStore()
+    s.connetti()
+    handlers['partita:aggiornamento']( aggiornamento( { statoTavolo: 'attesa' } ) )
+    emit.mockImplementation( ( _ev, _d, ack ) => ack( { ok: false, errore: 'La partita è già iniziata' } ) )
+    expect( await s.annulla() ).toBe( false )
+    expect( s.errore ).toBe( 'La partita è già iniziata' )
+    expect( s.agg ).not.toBeNull()
+  } )
+
+  it( 'mie restituisce le partite aperte del server', async () => {
+    const s = useMatchStore()
+    s.connetti()
+    emit.mockImplementation( ( _ev, _d, ack ) => ack( { ok: true, codici: ['X'], partite: [{ codice: 'X', statoTavolo: 'attesa' }] } ) )
+    expect( await s.mie() ).toEqual( [{ codice: 'X', statoTavolo: 'attesa' }] )
+  } )
 } )

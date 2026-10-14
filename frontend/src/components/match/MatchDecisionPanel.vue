@@ -70,7 +70,7 @@ function arrenditi() {
       <button data-test="costruttore" @click="match.invia({ tipo: 'usaEffetto', uid: v.giocatori[io].costruttore.uid })">Usa effetto del Costruttore</button>
     </template>
 
-    <button v-if="!v.esito && match.tocca" class="pannello__resa" data-test="arrenditi" @click="arrenditi">Arrenditi</button>
+    <button v-if="!v.esito" class="pannello__resa" data-test="arrenditi" @click="arrenditi">Arrenditi</button>
   </div>
 </template>
 

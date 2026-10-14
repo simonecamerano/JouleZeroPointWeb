@@ -32,7 +32,7 @@ const vista: Vista = {
 const store = reactive( {
   agg: { codice: 'COD', statoTavolo: 'inCorso', ruolo: 'A', avversario: 'bob', scadenzaFinestra: null,
     mosse: [{ tipo: 'passaTurno' }, { tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }], vista } as Aggiornamento,
-  vista, tocca: true, selezionata: null as string | null, errore: null,
+  vista, tocca: true, selezionata: null as string | null, errore: null as string | null, connesso: true,
   colonneGiocabili: [] as string[],
   mosseDi: ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }] : [] ),
   seleziona: vi.fn(), invia: vi.fn(), arrenditi: vi.fn(),
@@ -52,6 +52,19 @@ describe( 'MatchTable', () => {
     const presente = w.get( '[data-test="colonna-presente"]' )
     expect( presente.get( '[data-test="meta-avversario"]' ).html() ).toContain( '/img/2.png' )
     expect( presente.get( '[data-test="meta-mia"]' ).html() ).toContain( '/img/1.png' )
+  } )
+
+  it( 'la barra mostra l errore e la connessione persa', async () => {
+    const w = mount( MatchTable )
+    expect( w.find( '[data-test="errore-tavolo"]' ).exists() ).toBe( false )
+    expect( w.find( '[data-test="connessione-persa"]' ).exists() ).toBe( false )
+    store.errore = 'Partita non trovata'
+    store.connesso = false
+    await w.vm.$nextTick()
+    expect( w.get( '[data-test="errore-tavolo"]' ).text() ).toBe( 'Partita non trovata' )
+    expect( w.get( '[data-test="connessione-persa"]' ).text() ).toContain( 'Connessione persa' )
+    store.errore = null
+    store.connesso = true
   } )
 
   it( 'la carta coperta avversaria mostra il retro', () => {

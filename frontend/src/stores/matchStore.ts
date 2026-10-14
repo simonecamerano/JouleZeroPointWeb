@@ -4,7 +4,8 @@ import { io, type Socket } from 'socket.io-client'
 import { useAuthStore } from './auth'
 import type { Aggiornamento, Azione, Colonna } from '../types/match'
 
-type Risposta = { ok: boolean; errore?: string; codice?: string; ruolo?: string; codici?: string[] }
+export type PartitaAperta = { codice: string; statoTavolo: 'attesa' | 'inCorso' | 'pausa' | 'terminata' }
+type Risposta = { ok: boolean; errore?: string; codice?: string; ruolo?: string; codici?: string[]; partite?: PartitaAperta[] }
 
 export const useMatchStore = defineStore( 'match', () => {
   const agg = ref<Aggiornamento | null>( null )
@@ -35,13 +36,21 @@ export const useMatchStore = defineStore( 'match', () => {
       connesso.value = true
       errore.value = null
       // Dopo una riconnessione il socket e' nuovo e il server conta la presenza solo dopo partita:entra.
-      if ( agg.value ) socket?.emit( 'partita:entra', { codice: agg.value.codice }, () => {} )
+      // Se il server non la conosce piu' (riavvio), l'errore resta visibile e il tavolo torna alla lobby.
+      if ( agg.value ) {
+        socket?.emit( 'partita:entra', { codice: agg.value.codice }, ( r: Risposta ) => {
+          if ( r.ok ) return
+          errore.value = r.errore ?? 'Errore'
+          if ( r.errore === 'Partita non trovata' ) agg.value = null
+        } )
+      }
     } )
     socket.on( 'disconnect', () => { connesso.value = false } )
     socket.on( 'connect_error', ( e: Error ) => { connesso.value = false; errore.value = e.message } )
     socket.on( 'partita:aggiornamento', ( a: Aggiornamento ) => {
       if ( agg.value && agg.value.codice !== a.codice ) return
       agg.value = a
+      errore.value = null
       if ( selezionata.value && !a.vista?.giocatori[a.ruolo].mano?.some( ( c ) => c.uid === selezionata.value ) ) {
         selezionata.value = null
       }
@@ -83,6 +92,18 @@ export const useMatchStore = defineStore( 'match', () => {
     return esito( await chiedi( 'partita:arrenditi', { codice: agg.value.codice } ) )
   }
 
+  async function annulla(): Promise<boolean> {
+    if ( !agg.value ) return false
+    const ok = esito( await chiedi( 'partita:annulla', { codice: agg.value.codice } ) )
+    if ( ok ) agg.value = null
+    return ok
+  }
+
+  async function mie(): Promise<PartitaAperta[]> {
+    const r = await chiedi( 'partita:mie', {} )
+    return r.ok ? r.partite ?? [] : []
+  }
+
   function seleziona( uid: string | null ) {
     selezionata.value = uid
   }
@@ -96,6 +117,6 @@ export const useMatchStore = defineStore( 'match', () => {
 
   return {
     agg, connesso, errore, selezionata, vista, tocca, colonneGiocabili,
-    mosseDi, connetti, crea, entra, invia, arrenditi, seleziona, disconnetti,
+    mosseDi, connetti, crea, entra, invia, arrenditi, annulla, mie, seleziona, disconnetti,
   }
 } )
