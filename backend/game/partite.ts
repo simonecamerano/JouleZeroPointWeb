@@ -87,6 +87,13 @@ export class GestorePartite {
       .map((p) => p.codice);
   }
 
+  /** Le partite aperte dell'utente con lo stato del tavolo: niente stato vero, solo codice e fase. */
+  partiteAperteDi(userId: string): { codice: string; statoTavolo: StatoTavolo }[] {
+    return [...this.partite.values()]
+      .filter((p) => !p.stato?.esito && this.ruoloDi(p, userId))
+      .map((p) => ({ codice: p.codice, statoTavolo: this.statoTavolo(p) }));
+  }
+
   crea(u: Utente, deckId: string, mazzo: Mazzo, catalogo: Record<number, DefCarta>): Esito<{ codice: string }> {
     if (this.partiteDi(u.userId).length >= MAX_PARTITE_APERTE) return no(`Hai già ${MAX_PARTITE_APERTE} partite aperte`);
     const errore = validaMazzo(mazzo, catalogo);
@@ -169,6 +176,16 @@ export class GestorePartite {
     p.stato = arrendi(p.stato, ruolo);
     p.log.push({ t: new Date(), giocatore: ruolo, azione: { tipo: 'arrenditi' } });
     this.dopoCambio(p);
+    return ok(undefined);
+  }
+
+  /** Annulla un invito: solo il creatore, solo se la partita non e' ancora iniziata. Non salva nulla. */
+  annulla(codice: string, userId: string): Esito {
+    const p = this.partite.get(codice);
+    if (!p) return no('Partita non trovata');
+    if (p.posti.A?.userId !== userId) return no('Solo chi ha creato la partita può annullarla');
+    if (p.stato) return no('La partita è già iniziata');
+    this.rimuovi(p);
     return ok(undefined);
   }
 

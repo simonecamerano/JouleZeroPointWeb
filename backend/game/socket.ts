@@ -122,7 +122,17 @@ export function initSocket(
       return r.ok ? { ok: true } : r;
     });
 
-    evento(socket, 'partita:mie', () => ({ ok: true, codici: gestore.partiteDi(s.userId) }));
+    evento(socket, 'partita:annulla', (d) => {
+      if (typeof d.codice !== 'string') return { ok: false, errore: 'Codice non valido' };
+      const r = gestore.annulla(d.codice, s.userId);
+      return r.ok ? { ok: true } : r;
+    });
+
+    evento(socket, 'partita:mie', () => ({
+      ok: true,
+      codici: gestore.partiteDi(s.userId),
+      partite: gestore.partiteAperteDi(s.userId),
+    }));
 
     socket.on('disconnect', () => {
       for (const codice of s.partite) gestore.disconnesso(codice, s.userId);

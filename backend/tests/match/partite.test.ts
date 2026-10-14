@@ -131,6 +131,32 @@ describe('GestorePartite', () => {
     g.chiudi();
   });
 
+  describe('annulla invito', () => {
+    test('il creatore annulla una partita in attesa: sparisce, non salva nulla, libera il posto nel limite', async () => {
+      const { g, salvate } = nuovo();
+      g.crea(A, 'd1', mazzoProva(), catalogoProva());
+      expect(g.partiteAperteDi('u1')).toEqual([{ codice: 'COD1', statoTavolo: 'attesa' }]);
+      expect(g.annulla('COD1', 'u1')).toEqual({ ok: true, valore: undefined });
+      expect(g.aggiornamentoPer('COD1', 'u1')).toBeNull();
+      expect(g.partiteDi('u1')).toEqual([]);
+      await Promise.resolve();
+      expect(salvate).toHaveLength(0);
+      g.chiudi();
+    });
+
+    test('rifiuta chi non e creatore, una partita iniziata e un codice sconosciuto', () => {
+      const { g, codice } = avviata();
+      expect(g.annulla(codice, 'u1')).toEqual({ ok: false, errore: 'La partita è già iniziata' });
+      expect(g.annulla(codice, 'u2')).toMatchObject({ ok: false });
+      expect(g.annulla('NONESISTE', 'u1')).toEqual({ ok: false, errore: 'Partita non trovata' });
+      const r = g.crea(C, 'd3', mazzoProva(), catalogoProva());
+      if (!r.ok) throw new Error(r.errore);
+      expect(g.annulla(r.valore.codice, 'u1')).toEqual({ ok: false, errore: 'Solo chi ha creato la partita può annullarla' });
+      expect(g.aggiornamentoPer(r.valore.codice, 'u3')).not.toBeNull();
+      g.chiudi();
+    });
+  });
+
   test('massimo 3 partite aperte per utente', () => {
     const { g } = nuovo();
     for (let i = 0; i < 3; i++) expect(g.crea(A, 'd1', mazzoProva(), catalogoProva()).ok).toBe(true);

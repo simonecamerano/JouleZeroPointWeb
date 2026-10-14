@@ -197,7 +197,7 @@ describe('socket delle partite', () => {
     const sa = await socket(a.token);
     const r = await emetti(sa, 'partita:azione', dati);
     expect(r.ok).toBe(false);
-    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [] });
+    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [], partite: [] });
   });
 
   test.each([
@@ -206,13 +206,34 @@ describe('socket delle partite', () => {
     ['entra con codice numerico', 'partita:entra', { codice: 42 }],
     ['entra senza payload', 'partita:entra', undefined],
     ['arrenditi con codice oggetto', 'partita:arrenditi', { codice: {} }],
+    ['annulla con codice oggetto', 'partita:annulla', { codice: {} }],
+    ['annulla senza payload', 'partita:annulla', undefined],
   ])('payload malformato (%s): errore nell ack, il server resta in piedi', async (_n, ev, dati) => {
     const a = await utente('alice');
     const sa = await socket(a.token);
     const r = await emetti(sa, ev, dati);
     expect(r.ok).toBe(false);
     expect(typeof r.errore).toBe('string');
-    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [] });
+    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [], partite: [] });
+  });
+
+  test('annulla invito: la lista mie mostra l attesa, il creatore annulla e la partita sparisce', async () => {
+    const a = await utente('alice');
+    const b = await utente('bob');
+    const sa = await socket(a.token);
+    const sb = await socket(b.token);
+    const { codice } = await emetti(sa, 'partita:crea', { deckId: a.deckId });
+    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [codice], partite: [{ codice, statoTavolo: 'attesa' }] });
+    expect((await emetti(sb, 'partita:annulla', { codice })).ok).toBe(false);
+    expect(await emetti(sa, 'partita:annulla', { codice })).toEqual({ ok: true });
+    expect(await emetti(sa, 'partita:mie', {})).toEqual({ ok: true, codici: [], partite: [] });
+    expect(await emetti(sb, 'partita:entra', { codice, deckId: b.deckId })).toEqual({ ok: false, errore: 'Partita non trovata' });
+    expect(await Match.countDocuments()).toBe(0);
+  });
+
+  test('annulla non vale per una partita iniziata', async () => {
+    const { sa, codice } = await partitaIniziata();
+    expect(await emetti(sa, 'partita:annulla', { codice })).toEqual({ ok: false, errore: 'La partita è già iniziata' });
   });
 
   test('ack mancante: il server non va in eccezione', async () => {
@@ -229,7 +250,7 @@ describe('socket delle partite', () => {
     const ag = prossimo(sa2);
     expect(await emetti(sa2, 'partita:entra', { codice })).toEqual({ ok: true, ruolo: 'A' });
     expect((await ag).statoTavolo).toBe('inCorso');
-    expect(await emetti(sa2, 'partita:mie', {})).toEqual({ ok: true, codici: [codice] });
+    expect(await emetti(sa2, 'partita:mie', {})).toEqual({ ok: true, codici: [codice], partite: [{ codice, statoTavolo: 'inCorso' }] });
   });
 
   test('due schede dello stesso utente ricevono entrambe la vista', async () => {
