@@ -128,6 +128,12 @@ const isNewsActive = computed(() => {
           Deckbuilder
         </RouterLink>
         <RouterLink
+          to="/partita"
+          class="cyber-btn btn-secondary nav-item"
+        >
+          Gioca online
+        </RouterLink>
+        <RouterLink
           to="/profile"
           class="cyber-btn btn-secondary nav-item user-btn"
         >
@@ -211,6 +217,13 @@ const isNewsActive = computed(() => {
           @click="isMenuOpen = false"
         >
           Deckbuilder
+        </RouterLink>
+        <RouterLink
+          to="/partita"
+          class="mobile-nav-link"
+          @click="isMenuOpen = false"
+        >
+          Gioca online
         </RouterLink>
         <RouterLink
           to="/profile"
