@@ -1,6 +1,13 @@
 import { GestorePartite, Aggiornamento, PartitaSalvata, PAUSA_MS, CHIUSURA_MS, PULIZIA_MS } from '../../game/partite';
 import { catalogoProva, mazzoProva } from '../game/helpers';
 
+jest.mock('../../game/engine', () => {
+  const reale = jest.requireActual('../../game/engine');
+  return { ...reale, applica: jest.fn(reale.applica) };
+});
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { applica: applicaMock } = jest.requireMock('../../game/engine') as { applica: jest.Mock };
+
 const A = { userId: 'u1', username: 'alice' };
 const B = { userId: 'u2', username: 'bob' };
 
@@ -76,6 +83,25 @@ describe('timer delle partite', () => {
     // Il vecchio timer sarebbe scattato a 20000; un eventuale nuovo timer scatta a 30000.
     jest.advanceTimersByTime(10001);
     expect(g.aggiornamentoPer('COD', chi)!.vista).toEqual(dopoPassa);
+    g.chiudi();
+  });
+
+  test.each([
+    ['restituisce !ok', () => applicaMock.mockImplementationOnce(() => ({ ok: false, errore: 'guasto finto' }))],
+    ['lancia', () => applicaMock.mockImplementationOnce(() => { throw new Error('guasto finto'); })],
+  ])('passa automatico che fallisce (applica %s): errore registrato, scadenza azzerata, vista rimandata', (_nome, forza) => {
+    const errore = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { g, notifiche } = avviata();
+    const chi = finoAFinestra(g);
+    forza();
+    const prima = notifiche.length;
+    jest.advanceTimersByTime(20000);
+    expect(errore).toHaveBeenCalledWith(expect.stringContaining('COD'));
+    expect(errore).toHaveBeenCalledWith(expect.stringContaining('guasto finto'));
+    expect(notifiche.length).toBeGreaterThan(prima);
+    expect(notifiche.at(-1)!.a.scadenzaFinestra).toBeNull();
+    expect(g.aggiornamentoPer('COD', chi)!.scadenzaFinestra).toBeNull();
+    errore.mockRestore();
     g.chiudi();
   });
 

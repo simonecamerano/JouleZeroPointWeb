@@ -293,14 +293,25 @@ export class GestorePartite {
       let r: ReturnType<typeof applica>;
       try {
         r = applica(p.stato, chi, { tipo: 'passa' });
-      } catch {
+      } catch (e) {
+        this.passaAutomaticoFallito(p, (e as Error).message);
         return;
       }
-      if (!r.ok) return;
+      if (!r.ok) {
+        this.passaAutomaticoFallito(p, r.errore);
+        return;
+      }
       p.stato = r.stato;
       p.log.push({ t: new Date(), giocatore: 'server', azione: { tipo: 'passa', per: chi, motivo: 'timeout' } });
       this.dopoCambio(p);
     }, this.o.timeoutFinestraMs);
+  }
+
+  /** Il passa automatico non e' riuscito: lo si segnala e la vista smette di mostrare una scadenza gia' passata. */
+  private passaAutomaticoFallito(p: Partita, motivo: string): void {
+    console.error(`Partita ${p.codice}: passa automatico fallito (${motivo})`);
+    p.scadenzaFinestra = null;
+    this.notificaTutti(p);
   }
 
   private termina(p: Partita, esito: PartitaSalvata['esito']): void {
