@@ -1,12 +1,16 @@
 // Registro delle dichiarazioni: cardId → effetti. Le carte si aggiungono con `registra` dai file in `carte/`.
 import { StatoPartita } from '../engine/types';
+import { GAS } from './carte/gas';
+import { LIQUIDI } from './carte/liquidi';
+import { PLASMA } from './carte/plasma';
+import { SOLIDI } from './carte/solidi';
 import { DefEffetto, DichiarazioneCarta } from './dsl';
 
 const registro = new Map<number, DichiarazioneCarta>();
 
 // File delle carte: funzioni che restituiscono le dichiarazioni. Il Task 8 e il Task 9 le aggiungono qui.
 // Anche l'elenco è una funzione: letto al caricamento potrebbe trovare un import ancora a metà.
-const fonti = (): (() => DichiarazioneCarta[])[] => [];
+const fonti = (): (() => DichiarazioneCarta[])[] => [SOLIDI, LIQUIDI, GAS, PLASMA];
 let caricato = false;
 
 /**
@@ -15,8 +19,15 @@ let caricato = false;
  */
 function carica(): void {
   if (caricato) return;
+  // Il flag si alza solo a registrazione finita: un errore (carta doppia) non lascia un registro a metà in silenzio.
+  // Se `registra` lancia, a metà giro il registro ha già alcune carte: lo svuoto, così la chiamata dopo riprova da zero.
+  try {
+    for (const f of fonti()) registra(f());
+  } catch (e) {
+    registro.clear();
+    throw e;
+  }
   caricato = true;
-  for (const f of fonti()) registra(f());
 }
 
 export function registra(lista: DichiarazioneCarta[]): void {
