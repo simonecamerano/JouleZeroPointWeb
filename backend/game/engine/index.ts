@@ -1,6 +1,7 @@
 import { distruggi } from './campo';
 import { cercaInCampo } from './carte';
 import { giocaCarta, passa, passaTurno, scambio } from './azioni';
+import { rispondi } from '../effetti/dispatcher';
 import { chiDeveAgire } from './legali';
 import { log, nomeG } from './log';
 import { applicaBase, usaEffetto } from './manuale';
@@ -17,6 +18,7 @@ export type { Mazzo } from './carte';
 export { vista } from './vista';
 export type { Vista, VistaCampo, VistaGiocatore, VistaStack } from './vista';
 export { verificaInvarianti } from './invarianti';
+export { rispostaDefault } from '../effetti/dispatcher';
 
 function esegui(s: StatoPartita, p: PlayerId, a: Azione): string | null {
   if (!a || typeof a !== 'object') return 'Azione sconosciuta';
@@ -59,6 +61,8 @@ function esegui(s: StatoPartita, p: PlayerId, a: Azione): string | null {
       if (d?.tipo !== 'effettoManuale') return 'Nessun effetto in corso';
       s.decisione = null;
       return null;
+    case 'rispondi':
+      return rispondi(s, p, a.risposta);
     default:
       return 'Azione sconosciuta';
   }

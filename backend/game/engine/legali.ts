@@ -1,4 +1,5 @@
 import { contaInColonna, costoEffettivo, def, isFrammento } from './carte';
+import { risposteValide } from '../effetti/dispatcher';
 import { Azione, COLONNE, PlayerId, StatoPartita } from './types';
 
 export function chiDeveAgire(s: StatoPartita): PlayerId | null {
@@ -30,6 +31,8 @@ export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
           .map((c) => ({ tipo: 'capienza', distruggi: c.uid }) as Azione);
       case 'effettoManuale':
         return [{ tipo: 'fatto' }];
+      case 'sceltaEffetto':
+        return risposteValide(d.domanda).map((risposta) => ({ tipo: 'rispondi', risposta }) as Azione);
     }
   }
   const g = s.giocatori[p];

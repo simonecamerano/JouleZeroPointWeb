@@ -31,5 +31,6 @@ export function verificaInvarianti(s: StatoPartita): string[] {
   }
   if (s.tp < -4 || s.tp > 4) err.push(`TP fuori limite: ${s.tp}`);
   if (s.esito && s.fase !== 'terminata') err.push('esito presente ma fase non terminata');
+  if (!s.esito && !s.decisione && (s.coda.length || s.eventi.length)) err.push('effetti in sospeso senza una decisione');
   return err;
 }

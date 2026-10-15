@@ -1,4 +1,6 @@
-import { risolviCollisione } from './collisione';
+import { accoda, azzeraUsi, eseguiProssimo, interrompiCatena, LIMITE_EFFETTI, scattaRitardati } from '../effetti/dispatcher';
+import { applicaCollisione, calcolaCollisione } from './collisione';
+import { emetti } from './eventi';
 import { cercaInCampo, contaInColonna, def } from './carte';
 import { log } from './log';
 import { eseguiRisorse, ordine } from './risorse';
@@ -33,9 +35,13 @@ function risolviCimaStack(s: StatoPartita): void {
   }
 }
 
-/** Esegue le fasi automatiche finché serve una decisione umana o la partita finisce. */
+/**
+ * Esegue le fasi automatiche finché serve una decisione umana o la partita finisce.
+ * Ordine a ogni giro: fine partita, decisione, capienza, effetti in coda, finestra, stack, fase.
+ */
 export function avanza(s: StatoPartita): void {
-  for (let guardia = 0; guardia < 1000; guardia++) {
+  let effetti = 0;
+  for (let guardia = 0; guardia < 5000; guardia++) {
     verificaFine(s);
     if (s.esito) {
       s.fase = 'terminata';
@@ -43,12 +49,20 @@ export function avanza(s: StatoPartita): void {
       s.finestra = null;
       return;
     }
-    if (s.decisione || s.finestra) return;
+    if (s.decisione) return;
     const eccesso = trovaEccesso(s);
     if (eccesso) {
       s.decisione = { tipo: 'capienza', ...eccesso };
       return;
     }
+    if (s.eventi.length) accoda(s);
+    if (s.coda.length) {
+      effetti += 1;
+      if (effetti > LIMITE_EFFETTI) interrompiCatena(s);
+      else eseguiProssimo(s);
+      continue;
+    }
+    if (s.finestra) return;
     if (s.stack.length) {
       risolviCimaStack(s);
       continue;
@@ -60,28 +74,51 @@ export function avanza(s: StatoPartita): void {
       case 'slittamento':
         s.fase = 'risorse';
         if (s.round > 1) eseguiSlittamento(s);
+        emetti(s, { momento: 'inizioRound' });
+        scattaRitardati(s, 'inizioRound');
         continue;
       case 'risorse':
         s.fase = 'azioni';
         for (const p of GIOCATORI) s.giocatori[p].haPassato = false;
         s.attivo = s.iniziativa;
         eseguiRisorse(s);
+        scattaRitardati(s, 'risorse');
         continue;
       case 'azioni':
-        if (s.giocatori.A.haPassato && s.giocatori.B.haPassato) {
-          s.fase = 'collisione';
-          s.finestra = { contesto: 'collisione', priorita: s.iniziativa, passi: 0, passiNecessari: 2 };
-        }
-        return;
+        if (!(s.giocatori.A.haPassato && s.giocatori.B.haPassato)) return;
+        s.fase = 'collisione';
+        emetti(s, { momento: 'inizioCollisione' });
+        s.finestra = { contesto: 'collisione', priorita: s.iniziativa, passi: 0, passiNecessari: 2 };
+        continue;
       case 'collisione':
-        risolviCollisione(s);
-        s.fase = 'fine';
+        if (s.sottofase === null) {
+          s.collisione = calcolaCollisione(s);
+          s.sottofase = 'danni';
+          emetti(s, { momento: 'danniDeterminati' });
+        } else if (s.sottofase === 'danni') {
+          applicaCollisione(s, s.collisione!);
+          s.sottofase = 'chiusura';
+          emetti(s, { momento: 'fineCollisione' });
+          scattaRitardati(s, 'fineCollisione');
+        } else {
+          s.collisione = null;
+          s.sottofase = null;
+          azzeraUsi(s, 'collisione');
+          s.fase = 'fine';
+        }
         continue;
       case 'fine':
-        verificaSincronia(s);
-        if (s.esito) continue;
-        fineRound(s);
-        s.fase = 'slittamento';
+        if (s.sottofase === null) {
+          verificaSincronia(s);
+          if (s.esito) continue;
+          s.sottofase = 'fineRound';
+          emetti(s, { momento: 'fineRound' });
+          scattaRitardati(s, 'fineRound');
+        } else {
+          fineRound(s);
+          s.sottofase = null;
+          s.fase = 'slittamento';
+        }
         continue;
     }
   }
