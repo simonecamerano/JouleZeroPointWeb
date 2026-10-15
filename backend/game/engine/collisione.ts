@@ -2,6 +2,7 @@ import { distruggi, sposta } from './campo';
 import { pepDi, proprieta, rpDi } from './carte';
 import { log, nomeG } from './log';
 import { ricalcolaTP } from './temperatura';
+import { infliggiDanno } from './vita';
 import { altro, GIOCATORI, PlayerId, StatoMateria, StatoPartita } from './types';
 
 interface Totali {
@@ -45,12 +46,7 @@ export function risolviCollisione(s: StatoPartita): void {
     for (const p of GIOCATORI) danno[altro(p)] += Math.min(2, T[p].n.Gas);
   }
 
-  for (const p of GIOCATORI) {
-    if (danno[p] > 0) {
-      s.giocatori[p].it -= danno[p];
-      log(s, `${nomeG(p)} subisce ${danno[p]} danni IT (IT ${s.giocatori[p].it})`);
-    }
-  }
+  for (const p of GIOCATORI) infliggiDanno(s, p, danno[p]);
 
   // Chi si salva va deciso prima di toccare il campo: ogni distruzione ricalcola la TP
   // e quindi i segnalini, che cambierebbero le proprietà delle carte ancora da valutare.

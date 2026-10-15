@@ -1,4 +1,5 @@
 import { def, statoDi } from './carte';
+import { emetti } from './eventi';
 import { log, nomeG } from './log';
 import { PlayerId, StatoPartita } from './types';
 
@@ -17,6 +18,11 @@ export function ricalcolaTP(s: StatoPartita): void {
     fc.segnalino = statoDi(s, fc) === 'Materia Oscura' ? null : segnalino;
   }
   if (s.tp !== prima) log(s, `TP ${s.tp > 0 ? '+' : ''}${s.tp}`);
+  const segno = Math.sign(s.tp) as -1 | 0 | 1;
+  if (segno !== 0) {
+    if (s.segnoTP !== 0 && segno !== s.segnoTP) emetti(s, { momento: 'cambioSegnoTP', valore: s.tp });
+    s.segnoTP = segno;
+  }
   if (Math.abs(s.tp) === 4 && s.tp !== prima) inverti(s, null);
 }
 
@@ -29,4 +35,5 @@ export function inverti(s: StatoPartita, controllore: PlayerId | null): void {
   } else {
     log(s, `Inversione Temporale spontanea. Flusso ${s.flusso}`);
   }
+  emetti(s, controllore ? { momento: 'inversione', giocatore: controllore } : { momento: 'inversione' });
 }

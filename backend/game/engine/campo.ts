@@ -1,4 +1,5 @@
 import { cercaInCampo, def } from './carte';
+import { emetti, emettiIngresso } from './eventi';
 import { log, nomeG, NOMI_COLONNA } from './log';
 import { ricalcolaTP } from './temperatura';
 import { Carta, CartaCampo, Colonna, StatoPartita } from './types';
@@ -50,10 +51,15 @@ export function togli(s: StatoPartita, uid: string, opz: { ricalcola?: boolean }
 }
 
 export function distruggi(s: StatoPartita, uid: string, opz: { ricalcola?: boolean } = {}): boolean {
+  const t = cercaInCampo(s, uid);
   const fc = togli(s, uid, opz);
-  if (!fc) return false;
+  if (!fc || !t) return false;
   s.giocatori[fc.owner].orizzonte.push(aCarta(fc));
   log(s, `${def(s, fc.cardId).nome} finisce nell'Orizzonte degli Eventi`);
+  emetti(s, {
+    momento: 'distrutta', uid: fc.uid, cardId: fc.cardId, owner: fc.owner, da: t.colonna,
+    inCollisione: s.fase === 'collisione',
+  });
   return true;
 }
 
@@ -61,13 +67,15 @@ export function distruggi(s: StatoPartita, uid: string, opz: { ricalcola?: boole
 export function sposta(
   s: StatoPartita, uid: string, colonna: Colonna, opz: { supporto?: boolean; ricalcola?: boolean } = {},
 ): CartaCampo | null {
+  const da = cercaInCampo(s, uid)?.colonna;
   const fc = togli(s, uid, { ricalcola: opz.ricalcola });
-  if (!fc) return null;
+  if (!fc || !da) return null;
   const coperta = fc.coperta && colonna === 'futuro';
   const n = metti(s, aCarta(fc), colonna, { supporto: opz.supporto ?? false, coperta });
   n.modifiche = fc.modifiche;
   n.statoForzato = fc.statoForzato;
   if (colonna === 'presente' && opz.ricalcola !== false) ricalcolaTP(s);
   log(s, `${coperta ? 'Un Frammento coperto' : def(s, fc.cardId).nome} si sposta nel ${NOMI_COLONNA[colonna]}`);
+  emettiIngresso(s, n, colonna, da);
   return n;
 }
