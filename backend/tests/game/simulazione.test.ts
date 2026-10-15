@@ -12,6 +12,9 @@ function controllaVista(v: Vista, visti: Map<string, number>): string | null {
   const reg = (c: { uid: string; cardId: number | null } | null) => {
     if (c && c.cardId !== null) visti.set(c.uid, c.cardId);
   };
+  if (v.decisione?.tipo === 'sceltaEffetto' && v.decisione.giocatore !== v.io && v.decisione.domanda !== null) {
+    return `${v.io} vede la domanda di una scelta altrui`;
+  }
   const coperte = Object.values(v.colonne).flat().filter((c) => c.coperta && c.owner !== v.io);
   for (const c of coperte) {
     if (c.cardId !== null) return `${v.io} vede il cardId della carta coperta ${c.uid}`;

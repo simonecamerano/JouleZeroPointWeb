@@ -1,5 +1,7 @@
 import { GestorePartite, Aggiornamento, PartitaSalvata, PAUSA_MS, CHIUSURA_MS, PULIZIA_MS } from '../../game/partite';
 import { catalogoProva, mazzoProva } from '../game/helpers';
+import { carta, puoi, quando, tp } from '../../game/effetti/dsl';
+import { registraPerTest } from '../../game/effetti/registro';
 
 jest.mock('../../game/engine', () => {
   const reale = jest.requireActual('../../game/engine');
@@ -57,6 +59,77 @@ describe('timer delle partite', () => {
     jest.advanceTimersByTime(1);
     expect(g.aggiornamentoPer('COD', chi)!.vista).not.toEqual(prima);
     g.chiudi();
+  });
+
+  describe('scelta di un effetto', () => {
+    let togli: (() => void) | null = null;
+    afterEach(() => { togli?.(); togli = null; });
+
+    /** Porta la partita a una sceltaEffetto di A: carta 10 dichiarata "puoi tp(1)", effetto sospeso in coda[0]. */
+    function conScelta() {
+      togli = registraPerTest(carta(10, 'Carta 10', quando('inversione', puoi(tp(1)))));
+      const r = avviata();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = (r.g as any).partite.get('COD');
+      p.stato = {
+        ...p.stato,
+        finestra: null,
+        coda: [{ cardId: 10, indice: 0, sorgente: 'A-X', controllore: 'A', evento: { momento: 'inversione', giocatore: 'A' }, scelte: [], dati: {} }],
+        decisione: {
+          tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-X', cardId: 10,
+          domanda: { tipo: 'siNo', testo: 'Vuoi?' },
+        },
+      };
+      return { ...r, p };
+    }
+
+    test('scaduto il tempo, il server risponde con la risposta prudente', () => {
+      const { g, p, salvate: _s } = conScelta();
+      const tpPrima = p.stato.tp;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (g as any).dopoCambio(p);
+      expect(p.scadenzaFinestra).toBe(Date.now() + 20000);
+      jest.advanceTimersByTime(19999);
+      expect(p.stato.decisione?.tipo).toBe('sceltaEffetto');
+      jest.advanceTimersByTime(1);
+      expect(p.stato.decisione).toBeNull();
+      expect(p.stato.coda).toEqual([]);
+      expect(p.stato.tp).toBe(tpPrima); // la risposta prudente a un sì/no è no: l'effetto facoltativo non si applica
+      expect(p.log.at(-1)).toMatchObject({
+        giocatore: 'server', azione: { tipo: 'rispondi', risposta: false, per: 'A', motivo: 'timeout' },
+      });
+      g.chiudi();
+    });
+
+    test('in pausa il timer non parte; alla ripresa viene riprogrammato', () => {
+      const { g, p } = conScelta();
+      p.inPausa = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (g as any).dopoCambio(p);
+      expect(p.scadenzaFinestra).toBeNull();
+      expect(p.timer.finestra).toBeUndefined();
+      jest.advanceTimersByTime(60000);
+      expect(p.stato.decisione?.tipo).toBe('sceltaEffetto');
+      g.connesso('COD', 'u1'); // seconda connessione: tutti presenti, la partita riprende
+      expect(p.inPausa).toBe(false);
+      expect(p.scadenzaFinestra).toBe(Date.now() + 20000);
+      jest.advanceTimersByTime(20000);
+      expect(p.stato.decisione).toBeNull();
+      g.chiudi();
+    });
+
+    test('gli errori degli effetti vanno su console.error e si svuotano', () => {
+      const errore = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const { g, p } = conScelta();
+      p.stato.erroriEffetti = ['Carta 10 (10), effetto 0: boom'];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (g as any).dopoCambio(p);
+      expect(errore).toHaveBeenCalledWith(expect.stringContaining('COD'));
+      expect(errore).toHaveBeenCalledWith(expect.stringContaining('boom'));
+      expect(p.stato.erroriEffetti).toEqual([]);
+      errore.mockRestore();
+      g.chiudi();
+    });
   });
 
   test('una mossa tardiva dopo il passa automatico viene rifiutata e la vista rimandata', () => {

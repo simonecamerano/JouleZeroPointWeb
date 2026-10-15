@@ -85,3 +85,20 @@ describe('vista', () => {
     expect(testi).toContain('L\'effetto di Un Frammento coperto viene annullato');
   });
 });
+
+test('la domanda di una scelta la vede solo chi sceglie', () => {
+  const s = statoVuoto();
+  s.decisione = {
+    tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-C', cardId: 100,
+    domanda: { tipo: 'bersaglio', testo: 'scegli', uids: ['A-1', 'A-2'] },
+  };
+  expect(vista(s, 'A').decisione).toEqual(s.decisione);
+  expect(vista(s, 'B').decisione).toEqual({ tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-C', cardId: 100, domanda: null });
+});
+
+test('manuali e silenziate sono pubbliche', () => {
+  const s = statoVuoto();
+  s.manuali = [9];
+  s.silenziate = ['B-3'];
+  expect(vista(s, 'B')).toMatchObject({ manuali: [9], silenziate: ['B-3'] });
+});

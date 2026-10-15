@@ -1,10 +1,17 @@
 import { randomBytes, randomInt } from 'crypto';
 import {
   Azione, applica, arrendi, chiDeveAgire, creaPartita, DefCarta, Mazzo, mosseLegali, PlayerId,
-  StatoPartita, validaMazzo, vista, Vista,
+  rispostaDefault, StatoPartita, validaMazzo, vista, Vista,
 } from './engine';
 import { carteUsate, VERSIONE_REGOLAMENTO, VERSIONE_SCRIPT } from './catalogo';
 import type { VoceLogMatch } from '../models/Match';
+
+/** Azione che il server applica allo scadere del timer: passa in una finestra, risposta prudente in una scelta. */
+function azioneAutomatica(s: StatoPartita): Azione | null {
+  if (s.decisione?.tipo === 'sceltaEffetto') return { tipo: 'rispondi', risposta: rispostaDefault(s.decisione.domanda) };
+  if (s.finestra && !s.decisione) return { tipo: 'passa' };
+  return null;
+}
 
 export interface Utente { userId: string; username: string }
 export type StatoTavolo = 'attesa' | 'inCorso' | 'pausa' | 'terminata';
@@ -290,6 +297,10 @@ export class GestorePartite {
 
   /** Dopo ogni cambio di stato: timer della finestra, fine partita, notifiche. */
   protected dopoCambio(p: Partita): void {
+    if (p.stato?.erroriEffetti.length) {
+      for (const e of p.stato.erroriEffetti) console.error(`Partita ${p.codice}: effetto in errore, ${e}`);
+      p.stato.erroriEffetti = [];
+    }
     this.programmaFinestra(p);
     if (p.stato?.esito && !p.salvata) this.termina(p, { vincitore: p.stato.esito.vincitore, motivo: p.stato.esito.motivo });
     this.notificaTutti(p);
@@ -300,16 +311,17 @@ export class GestorePartite {
     p.timer.finestra = undefined;
     p.scadenzaFinestra = null;
     const s = p.stato;
-    if (!s || s.esito || p.inPausa || !s.finestra || s.decisione) return;
+    if (!s || s.esito || p.inPausa || !azioneAutomatica(s)) return;
     const chi = chiDeveAgire(s);
     if (!chi) return;
     p.scadenzaFinestra = Date.now() + this.o.timeoutFinestraMs;
     p.timer.finestra = setTimeout(() => {
       p.timer.finestra = undefined;
-      if (!p.stato || chiDeveAgire(p.stato) !== chi || !p.stato.finestra) return;
+      const azione = p.stato ? azioneAutomatica(p.stato) : null;
+      if (!p.stato || !azione || chiDeveAgire(p.stato) !== chi) return;
       let r: ReturnType<typeof applica>;
       try {
-        r = applica(p.stato, chi, { tipo: 'passa' });
+        r = applica(p.stato, chi, azione);
       } catch (e) {
         this.passaAutomaticoFallito(p, (e as Error).message);
         return;
@@ -319,7 +331,7 @@ export class GestorePartite {
         return;
       }
       p.stato = r.stato;
-      p.log.push({ t: new Date(), giocatore: 'server', azione: { tipo: 'passa', per: chi, motivo: 'timeout' } });
+      p.log.push({ t: new Date(), giocatore: 'server', azione: { ...azione, per: chi, motivo: 'timeout' } });
       this.dopoCambio(p);
     }, this.o.timeoutFinestraMs);
   }

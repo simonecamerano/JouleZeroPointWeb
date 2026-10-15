@@ -1,7 +1,7 @@
 import { cercaInCampo } from './carte';
 import { chiDeveAgire } from './legali';
 import {
-  Carta, Colonna, COLONNE, Decisione, Esito, Fase, Finestra, Flusso, Modifica, PlayerId, StatoMateria,
+  Carta, Colonna, COLONNE, Decisione, Domanda, Esito, Fase, Finestra, Flusso, Modifica, PlayerId, StatoMateria,
   StatoPartita, VoceLog,
 } from './types';
 
@@ -39,6 +39,10 @@ export interface VistaGiocatore {
   haPassato: boolean;
 }
 
+export type VistaDecisione =
+  | Exclude<Decisione, { tipo: 'sceltaEffetto' }>
+  | { tipo: 'sceltaEffetto'; giocatore: PlayerId; uid: string; cardId: number; domanda: Domanda | null };
+
 export interface Vista {
   io: PlayerId;
   round: number;
@@ -53,7 +57,9 @@ export interface Vista {
   giocatori: Record<PlayerId, VistaGiocatore>;
   stack: VistaStack[];
   finestra: Finestra | null;
-  decisione: Decisione | null;
+  decisione: VistaDecisione | null;
+  manuali: number[];
+  silenziate: string[];
   esito: Esito | null;
   log: VoceLog[];
 }
@@ -90,7 +96,12 @@ export function vista(s: StatoPartita, io: PlayerId): Vista {
       uid: v.carta.uid, cardId: nascosta(v.carta.uid) ? null : v.carta.cardId,
       controllore: v.controllore, annullata: v.annullata,
     })),
-    finestra: s.finestra, decisione: s.decisione, esito: s.esito,
+    finestra: s.finestra,
+    // Le opzioni di una scelta possono nominare carte coperte o della mano: le vede solo chi sceglie.
+    decisione: s.decisione?.tipo === 'sceltaEffetto' && s.decisione.giocatore !== io
+      ? { ...s.decisione, domanda: null } : s.decisione,
+    manuali: s.manuali, silenziate: s.silenziate,
+    esito: s.esito,
     log: s.log.filter((l) => !l.soloPer || l.soloPer === io),
   });
 }
