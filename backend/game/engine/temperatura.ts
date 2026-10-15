@@ -1,4 +1,5 @@
 import { def, statoDi } from './carte';
+import { tpLimitata } from '../effetti/continui';
 import { emetti } from './eventi';
 import { log, nomeG } from './log';
 import { PlayerId, StatoPartita } from './types';
@@ -12,7 +13,7 @@ export function ricalcolaTP(s: StatoPartita): void {
     if (t === 'Caldo') base += 1;
     else if (t === 'Freddo') base -= 1;
   }
-  s.tp = Math.max(-4, Math.min(4, base + s.tpSpostamento));
+  s.tp = Math.max(-4, Math.min(4, tpLimitata(s, base + s.tpSpostamento)));
   const segnalino = s.tp >= 2 ? 'caldo' : s.tp <= -2 ? 'freddo' : null;
   for (const fc of s.colonne.presente) {
     fc.segnalino = statoDi(s, fc) === 'Materia Oscura' ? null : segnalino;

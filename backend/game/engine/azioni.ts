@@ -1,5 +1,6 @@
 import { metti } from './campo';
-import { contaInColonna, costoEffettivo, def, isFrammento } from './carte';
+import { contaInColonna, def, isFrammento } from './carte';
+import { consumaSconto, costoPer, eventoGiocabile } from '../effetti/continui';
 import { log, nomeG, NOMI_COLONNA } from './log';
 import { altro, COLONNE, Colonna, PlayerId, StatoPartita } from './types';
 
@@ -21,10 +22,12 @@ export function giocaCarta(s: StatoPartita, p: PlayerId, uid: string, colonna?: 
     if (!colonna) return 'Scegli la colonna in cui giocare il Frammento';
     if (contaInColonna(s, colonna, p) >= 4) return 'Colonna piena: massimo 4 tuoi Frammenti';
   }
-  const costo = costoEffettivo(d, colonna);
+  if (!eventoGiocabile(s, p, d)) return 'Non puoi giocare Eventi adesso';
+  const costo = costoPer(s, p, d, colonna);
   if (costo > g.et) return `ET insufficienti: servono ${costo}, ne hai ${g.et}`;
 
   g.et -= costo;
+  consumaSconto(s, p, d, colonna);
   g.mano = g.mano.filter((c) => c.uid !== uid);
 
   if (isFrammento(d.tipo)) {

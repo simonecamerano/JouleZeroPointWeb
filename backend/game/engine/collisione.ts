@@ -1,5 +1,6 @@
 import { distruggi, sposta } from './campo';
 import { pepDi, proprieta, rpDi } from './carte';
+import { bonusPep } from '../effetti/continui';
 import { log, nomeG } from './log';
 import { ricalcolaTP } from './temperatura';
 import { infliggiDanno } from './vita';
@@ -18,7 +19,7 @@ function totali(s: StatoPartita, p: PlayerId): Totali {
     n: { Solido: 0, Liquido: 0, Gas: 0, Plasma: 0, 'Materia Oscura': 0 },
   };
   for (const fc of s.colonne.presente.filter((c) => c.owner === p)) {
-    t.pep += pepDi(s, fc);
+    t.pep += pepDi(s, fc) + bonusPep(s, fc);
     t.rp += rpDi(s, fc);
     for (const st of proprieta(s, fc)) t.n[st] += 1;
   }

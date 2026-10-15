@@ -1,4 +1,5 @@
-import { contaInColonna, costoEffettivo, def, isFrammento } from './carte';
+import { contaInColonna, def, isFrammento } from './carte';
+import { costoPer, eventoGiocabile } from '../effetti/continui';
 import { risposteValide } from '../effetti/dispatcher';
 import { Azione, COLONNE, PlayerId, StatoPartita } from './types';
 
@@ -41,7 +42,7 @@ export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
     out.push({ tipo: 'passa' });
     for (const c of g.mano) {
       const dc = def(s, c.cardId);
-      if (dc.tipo === 'Evento' && dc.costo <= g.et) out.push({ tipo: 'giocaCarta', uid: c.uid });
+      if (dc.tipo === 'Evento' && eventoGiocabile(s, p, dc) && costoPer(s, p, dc) <= g.et) out.push({ tipo: 'giocaCarta', uid: c.uid });
     }
     return out;
   }
@@ -50,11 +51,11 @@ export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
     const dc = def(s, c.cardId);
     if (isFrammento(dc.tipo)) {
       for (const colonna of COLONNE) {
-        if (contaInColonna(s, colonna, p) < 4 && costoEffettivo(dc, colonna) <= g.et) {
+        if (contaInColonna(s, colonna, p) < 4 && costoPer(s, p, dc, colonna) <= g.et) {
           out.push({ tipo: 'giocaCarta', uid: c.uid, colonna });
         }
       }
-    } else if (dc.costo <= g.et) {
+    } else if (eventoGiocabile(s, p, dc) && costoPer(s, p, dc) <= g.et) {
       out.push({ tipo: 'giocaCarta', uid: c.uid });
     }
   }
