@@ -21,6 +21,12 @@ export type AzioneBase =
   | { op: 'scarta'; uid: string }
   | { op: 'annulla'; uid: string };
 
+export type Domanda =
+  | { tipo: 'siNo'; testo: string }
+  | { tipo: 'bersaglio'; testo: string; uids: string[] }
+  | { tipo: 'opzione'; testo: string; opzioni: string[] }
+export type Risposta = boolean | string | number
+
 export type Azione =
   | { tipo: 'sceltaIniziativa'; tieni: boolean }
   | { tipo: 'mulligan'; esegui: boolean }
@@ -31,6 +37,8 @@ export type Azione =
   | { tipo: 'passaTurno' }
   | { tipo: 'passa' }
   | { tipo: 'usaEffetto'; uid: string }
+  | { tipo: 'rispondi'; risposta: Risposta }
+  | { tipo: 'attivaEffetto'; uid: string; indice: number }
   | { tipo: 'base'; base: AzioneBase }
   | { tipo: 'fatto' };
 
@@ -39,7 +47,8 @@ export type Decisione =
   | { tipo: 'mulligan'; giocatore: PlayerId }
   | { tipo: 'bonusControllo'; giocatore: PlayerId }
   | { tipo: 'capienza'; giocatore: PlayerId; colonna: Colonna }
-  | { tipo: 'effettoManuale'; giocatore: PlayerId; uid: string; origine: 'stack' | 'libero' };
+  | { tipo: 'effettoManuale'; giocatore: PlayerId; uid: string; origine: 'stack' | 'libero' }
+  | { tipo: 'sceltaEffetto'; giocatore: PlayerId; uid: string; cardId: number; domanda: Domanda | null };
 
 export interface VistaCampo {
   uid: string; owner: PlayerId; coperta: boolean; cardId: number | null;
@@ -58,7 +67,7 @@ export interface Vista {
   anomalia: Carta | null; colonne: Record<Colonna, VistaCampo[]>; giocatori: Record<PlayerId, VistaGiocatore>;
   stack: VistaStack[];
   finestra: { contesto: 'giocata' | 'collisione'; priorita: PlayerId; passi: number; passiNecessari: number } | null;
-  decisione: Decisione | null;
+  decisione: Decisione | null; manuali: number[]; silenziate: string[];
   esito: { vincitore: PlayerId | null; motivo: string } | null;
   log: { round: number; testo: string; soloPer?: PlayerId }[];
 }

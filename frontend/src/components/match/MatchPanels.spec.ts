@@ -12,7 +12,8 @@ const store = reactive( {
     giocatori: { A: { costruttore: { uid: 'A-C', cardId: 100 }, mano: [{ uid: 'A-1', cardId: 3 }] }, B: { costruttore: { uid: 'B-C', cardId: 100 } } },
     stack: [],
   },
-  tocca: true, selezionata: null as string | null,
+  tocca: true, selezionata: null as string | null, bersagli: [] as string[],
+  mosseEffetto: () => [] as unknown[],
   mosseDi: ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'scambio', uid: 'A-1' }] : [] ),
   invia, arrenditi,
 } )
@@ -29,6 +30,7 @@ beforeEach( () => {
   store.vista.esito = null
   store.tocca = true
   store.selezionata = null
+  store.mosseDi = ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'scambio', uid: 'A-1' }] : [] )
 } )
 
 describe( 'MatchDecisionPanel', () => {
@@ -61,15 +63,37 @@ describe( 'MatchDecisionPanel', () => {
     expect( invia ).toHaveBeenCalledWith( { tipo: 'passa' } )
   } )
 
-  it( 'fase azioni: passa il turno, scambio della carta selezionata, effetto del Costruttore', async () => {
+  it( 'fase azioni: passa il turno, gioca e scambia la carta selezionata, niente bottone fisso del Costruttore', async () => {
     store.selezionata = 'A-1'
+    store.mosseDi = ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'giocaCarta', uid: 'A-1' }, { tipo: 'scambio', uid: 'A-1' }] : [] )
     const w = mount( MatchDecisionPanel )
     await w.get( '[data-test="passa-turno"]' ).trigger( 'click' )
+    await w.get( '[data-test="gioca"]' ).trigger( 'click' )
     await w.get( '[data-test="scambio"]' ).trigger( 'click' )
-    await w.get( '[data-test="costruttore"]' ).trigger( 'click' )
+    expect( w.find( '[data-test="costruttore"]' ).exists() ).toBe( false )
     expect( invia.mock.calls.map( ( c ) => c[0] ) ).toEqual( [
-      { tipo: 'passaTurno' }, { tipo: 'scambio', uid: 'A-1' }, { tipo: 'usaEffetto', uid: 'A-C' },
+      { tipo: 'passaTurno' }, { tipo: 'giocaCarta', uid: 'A-1' }, { tipo: 'scambio', uid: 'A-1' },
     ] )
+  } )
+
+  it( 'scelta Sì/No e scelta fra opzioni', async () => {
+    store.vista.decisione = { tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-5', cardId: 2, domanda: { tipo: 'siNo', testo: 'Faglia Primaria: vuoi distruggi questa carta?' } }
+    const w = mount( MatchDecisionPanel )
+    expect( w.text() ).toContain( 'Faglia Primaria: vuoi distruggi questa carta?' )
+    await w.get( '[data-test="scelta-si"]' ).trigger( 'click' )
+    store.vista.decisione = { tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-5', cardId: 19, domanda: { tipo: 'opzione', testo: 'scegli', opzioni: ['TP +1', 'TP -1'] } }
+    await w.vm.$nextTick()
+    await w.get( '[data-test="opzione-1"]' ).trigger( 'click' )
+    expect( invia.mock.calls.map( ( c ) => c[0] ) ).toEqual( [
+      { tipo: 'rispondi', risposta: true }, { tipo: 'rispondi', risposta: 1 },
+    ] )
+  } )
+
+  it( "quando sceglie l'avversario si vede solo che sta scegliendo", () => {
+    store.tocca = false
+    store.vista.decisione = { tipo: 'sceltaEffetto', giocatore: 'B', uid: 'B-5', cardId: 2, domanda: null }
+    const w = mount( MatchDecisionPanel )
+    expect( w.get( '[data-test="attesa-scelta"]' ).text() ).toContain( 'Carta 1' )
   } )
 
   it( 'non mostra nulla di azionabile quando non tocca a me', () => {

@@ -7,22 +7,17 @@ defineProps<{ carte: Carta[] }>()
 const emit = defineEmits<{ carta: [uid: string] }>()
 const match = useMatchStore()
 
-// Durante un effetto manuale il click in mano sceglie il bersaglio (es. `scarta`), non gioca la carta.
-const inEffettoManuale = () => match.tocca && match.vista?.decisione?.tipo === 'effettoManuale'
+// Durante un effetto manuale o una scelta di bersaglio il click in mano indica una carta, non la gioca.
+const inSceltaCarta = () => !!match.tocca && (
+  match.vista?.decisione?.tipo === 'effettoManuale' || match.bersagli.length > 0
+)
 
 function click( c: Carta ) {
-  if ( inEffettoManuale() ) {
+  if ( inSceltaCarta() ) {
     emit( 'carta', c.uid )
     return
   }
-  const mosse = match.mosseDi( c.uid )
-  if ( !mosse.length ) return
-  // Evento o Anomalia: una sola mossa senza colonna, si gioca subito.
-  const senzaColonna = mosse.find( ( m ) => m.tipo === 'giocaCarta' && !m.colonna )
-  if ( senzaColonna ) {
-    match.invia( senzaColonna )
-    return
-  }
+  if ( !match.mosseDi( c.uid ).length ) return
   match.seleziona( match.selezionata === c.uid ? null : c.uid )
 }
 </script>
@@ -34,7 +29,9 @@ function click( c: Carta ) {
       :key="c.uid"
       :data-uid="c.uid"
       :card-id="c.cardId"
-      :attenuata="!inEffettoManuale() && match.mosseDi(c.uid).length === 0"
+      :uid="c.uid"
+      :attenuata="inSceltaCarta() ? !match.bersagli.includes(c.uid) && match.bersagli.length > 0 : match.mosseDi(c.uid).length === 0"
+      :evidenziata="match.bersagli.includes(c.uid)"
       :selezionata="match.selezionata === c.uid"
       @click="click(c)"
     />

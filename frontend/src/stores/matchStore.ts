@@ -12,6 +12,7 @@ export const useMatchStore = defineStore( 'match', () => {
   const connesso = ref( false )
   const errore = ref<string | null>( null )
   const selezionata = ref<string | null>( null )
+  const anteprima = ref<{ cardId: number; uid: string | null } | null>( null )
   let socket: Socket | null = null
 
   const vista = computed( () => agg.value?.vista ?? null )
@@ -19,6 +20,20 @@ export const useMatchStore = defineStore( 'match', () => {
 
   function mosseDi( uid: string ): Azione[] {
     return ( agg.value?.mosse ?? [] ).filter( ( m ) => ( m.tipo === 'giocaCarta' || m.tipo === 'scambio' ) && m.uid === uid )
+  }
+
+  function mosseEffetto( uid: string ): Azione[] {
+    return ( agg.value?.mosse ?? [] ).filter( ( m ) => ( m.tipo === 'attivaEffetto' || m.tipo === 'usaEffetto' ) && m.uid === uid )
+  }
+
+  // Bersagli validi della scelta in corso, solo per chi sceglie.
+  const bersagli = computed<string[]>( () => {
+    const d = vista.value?.decisione
+    return tocca.value && d?.tipo === 'sceltaEffetto' && d.domanda?.tipo === 'bersaglio' ? d.domanda.uids : []
+  } )
+
+  function mostraAnteprima( cardId: number | null, uid: string | null = null ) {
+    anteprima.value = cardId === null ? null : { cardId, uid }
   }
 
   const colonneGiocabili = computed<Colonna[]>( () => {
@@ -116,7 +131,7 @@ export const useMatchStore = defineStore( 'match', () => {
   }
 
   return {
-    agg, connesso, errore, selezionata, vista, tocca, colonneGiocabili,
-    mosseDi, connetti, crea, entra, invia, arrenditi, annulla, mie, seleziona, disconnetti,
+    agg, connesso, errore, selezionata, vista, tocca, colonneGiocabili, anteprima, bersagli,
+    mosseDi, mosseEffetto, mostraAnteprima, connetti, crea, entra, invia, arrenditi, annulla, mie, seleziona, disconnetti,
   }
 } )

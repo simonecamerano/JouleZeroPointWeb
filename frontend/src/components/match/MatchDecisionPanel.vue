@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useMatchStore } from '../../stores/matchStore'
+import { useCardStore } from '../../stores/cardStore'
 import type { Decisione } from '../../types/match'
 
 const match = useMatchStore()
+const cards = useCardStore()
 const v = computed( () => match.vista! )
 const d = computed( () => v.value.decisione as Decisione | null )
 const io = computed( () => match.agg!.ruolo )
@@ -20,6 +22,9 @@ onBeforeUnmount( () => clearInterval( t ) )
 const secondi = computed( () => ( match.agg!.scadenzaFinestra ? Math.max( 0, Math.ceil( ( match.agg!.scadenzaFinestra - ora.value ) / 1000 ) ) : null ) )
 
 const scambio = computed( () => ( match.selezionata ? match.mosseDi( match.selezionata ).find( ( m ) => m.tipo === 'scambio' ) : undefined ) )
+const giocabile = computed( () => ( match.selezionata
+  ? match.mosseDi( match.selezionata ).find( ( m ) => m.tipo === 'giocaCarta' && !m.colonna ) : undefined ) )
+const nomeCarta = ( id: number ) => cards.getCardById( id )?.name ?? `Carta ${id}`
 const esitoTesto = computed( () => {
   const e = v.value.esito
   if ( !e ) return ''
@@ -55,19 +60,37 @@ function arrenditi() {
         <button data-test="bonus-si" @click="match.invia({ tipo: 'bonusControllo', pesca: true })">Pesco la carta extra</button>
         <button data-test="bonus-no" @click="match.invia({ tipo: 'bonusControllo', pesca: false })">Rinuncio</button>
       </template>
+      <template v-else-if="d.tipo === 'sceltaEffetto' && d.domanda">
+        <p data-test="testo-scelta">{{ d.domanda.testo }}</p>
+        <template v-if="d.domanda.tipo === 'siNo'">
+          <button data-test="scelta-si" @click="match.invia({ tipo: 'rispondi', risposta: true })">Sì</button>
+          <button data-test="scelta-no" @click="match.invia({ tipo: 'rispondi', risposta: false })">No</button>
+        </template>
+        <template v-else-if="d.domanda.tipo === 'opzione'">
+          <button v-for="( o, i ) in d.domanda.opzioni" :key="i" :data-test="`opzione-${i}`"
+            @click="match.invia({ tipo: 'rispondi', risposta: i })">{{ o }}</button>
+        </template>
+        <p v-else>Clicca uno dei bersagli evidenziati.</p>
+        <p v-if="secondi !== null">{{ secondi }} s</p>
+      </template>
       <p v-else-if="d.tipo === 'capienza'">Colonna piena: clicca il tuo Frammento da distruggere nel {{ NOMI_COL[d.colonna] }}.</p>
     </template>
+
+    <p v-else-if="!match.tocca && d?.tipo === 'sceltaEffetto'" data-test="attesa-scelta">
+      L'avversario sta scegliendo per {{ nomeCarta(d.cardId) }}
+    </p>
 
     <template v-else-if="match.tocca && v.finestra">
       <p>{{ v.finestra.contesto === 'collisione' ? 'Collisione: puoi rispondere con un Evento' : 'Puoi rispondere con un Evento' }}</p>
       <p v-if="secondi !== null">{{ secondi }} s</p>
+      <button v-if="giocabile" data-test="gioca" @click="match.invia(giocabile!)">Gioca la carta selezionata</button>
       <button data-test="passa" @click="match.invia({ tipo: 'passa' })">Passa</button>
     </template>
 
     <template v-else-if="match.tocca && v.fase === 'azioni'">
       <button data-test="passa-turno" @click="match.invia({ tipo: 'passaTurno' })">Passa il turno</button>
+      <button v-if="giocabile" data-test="gioca" @click="match.invia(giocabile!)">Gioca la carta selezionata</button>
       <button v-if="scambio" data-test="scambio" @click="match.invia(scambio!)">Scambia la carta selezionata (+1 ET)</button>
-      <button data-test="costruttore" @click="match.invia({ tipo: 'usaEffetto', uid: v.giocatori[io].costruttore.uid })">Usa effetto del Costruttore</button>
     </template>
 
     <button v-if="!v.esito" class="pannello__resa" data-test="arrenditi" @click="arrenditi">Arrenditi</button>

@@ -27,6 +27,10 @@ const cima = ( arr: { cardId: number }[] ) => ( arr.length ? arr[arr.length - 1]
 const bersaglio = ref<string | null>( null )
 
 function cartaCliccata( uid: string ) {
+  if ( match.bersagli.includes( uid ) ) {
+    match.invia( { tipo: 'rispondi', risposta: uid } )
+    return
+  }
   const d = v.value.decisione
   if ( match.tocca && d?.tipo === 'capienza' ) {
     match.invia( { tipo: 'capienza', distruggi: uid } )
@@ -49,17 +53,20 @@ function cartaCliccata( uid: string ) {
       <MatchPile class="g-orizzonte-a" titolo="Orizzonte" :cima="cima(g(lui).orizzonte)" :conteggio="g(lui).orizzonte.length" />
       <MatchPile class="g-memoria-a" titolo="Memoria" :cima="cima(g(lui).memoria)" :conteggio="g(lui).memoria.length" />
       <div class="g-centro-sx">
-        <MatchPile titolo="Anomalia" :cima="v.anomalia?.cardId ?? null" :conteggio="v.anomalia ? 1 : 0" />
+        <MatchPile
+          titolo="Anomalia" :cima="v.anomalia?.cardId ?? null" :conteggio="v.anomalia ? 1 : 0" :uid="v.anomalia?.uid"
+          :evidenziata="!!v.anomalia && match.bersagli.includes(v.anomalia.uid)" @click="v.anomalia && cartaCliccata(v.anomalia.uid)"
+        />
         <MatchThermometer :tp="v.tp" :flusso="v.flusso" />
       </div>
       <MatchColumn class="g-passato" colonna="passato" :carte="v.colonne.passato" @carta="cartaCliccata" />
       <MatchColumn class="g-presente" colonna="presente" :carte="v.colonne.presente" @carta="cartaCliccata" />
       <MatchColumn class="g-futuro" colonna="futuro" :carte="v.colonne.futuro" @carta="cartaCliccata" />
-      <MatchPile class="g-costr-a" titolo="Costruttore" :cima="g(lui).costruttore.cardId" :conteggio="1" />
+      <MatchPile class="g-costr-a" titolo="Costruttore" :uid="g(lui).costruttore.uid" :cima="g(lui).costruttore.cardId" :conteggio="1" />
       <MatchPile class="g-mazzo-a" titolo="Futuro" :cima="null" coperta :conteggio="g(lui).carteFuturo" />
       <MatchPile class="g-orizzonte-b" mia titolo="Orizzonte" :cima="cima(g(io).orizzonte)" :conteggio="g(io).orizzonte.length" />
       <MatchPile class="g-memoria-b" mia titolo="Memoria" :cima="cima(g(io).memoria)" :conteggio="g(io).memoria.length" />
-      <MatchPile class="g-costr-b" mia titolo="Costruttore" :cima="g(io).costruttore.cardId" :conteggio="1" />
+      <MatchPile class="g-costr-b" mia titolo="Costruttore" :uid="g(io).costruttore.uid" :cima="g(io).costruttore.cardId" :conteggio="1" />
       <MatchPile class="g-mazzo-b" mia titolo="Futuro" :cima="null" coperta :conteggio="g(io).carteFuturo" />
     </div>
 
@@ -72,7 +79,9 @@ function cartaCliccata( uid: string ) {
         piccola
         :card-id="voce.cardId"
         :coperta="voce.cardId === null"
+        :uid="voce.uid"
         :attenuata="voce.annullata"
+        :evidenziata="match.bersagli.includes(voce.uid)"
         :class="voce.controllore === io ? 'mia' : 'avversario'"
         :title="voce.annullata ? 'Annullata' : undefined"
         @click="cartaCliccata(voce.uid)"

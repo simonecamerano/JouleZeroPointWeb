@@ -33,7 +33,9 @@ const store = reactive( {
   agg: { codice: 'COD', statoTavolo: 'inCorso', ruolo: 'A', avversario: 'bob', scadenzaFinestra: null,
     mosse: [{ tipo: 'passaTurno' }, { tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }], vista } as Aggiornamento,
   vista, tocca: true, selezionata: null as string | null, errore: null as string | null, connesso: true,
-  colonneGiocabili: [] as string[],
+  colonneGiocabili: [] as string[], bersagli: [] as string[], anteprima: null,
+  mosseEffetto: ( uid: string ) => ( uid === 'A-5' ? [{ tipo: 'attivaEffetto', uid: 'A-5', indice: 0 }] : [] ),
+  mostraAnteprima: vi.fn(),
   mosseDi: ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }] : [] ),
   seleziona: vi.fn(), invia: vi.fn(), arrenditi: vi.fn(),
 } )
@@ -97,6 +99,22 @@ describe( 'MatchTable', () => {
     const w = mount( MatchTable )
     await w.get( '[data-test="mano-mia"] [data-uid="A-1"]' ).trigger( 'click' )
     expect( store.seleziona ).toHaveBeenCalledWith( 'A-1' )
+  } )
+
+  it( 'una carta con effetto attivabile ha il suo bottone', async () => {
+    const w = mount( MatchTable )
+    await w.get( '[data-test="colonna-presente"] [data-test="azione-carta"]' ).trigger( 'click' )
+    expect( store.invia ).toHaveBeenCalledWith( { tipo: 'attivaEffetto', uid: 'A-5', indice: 0 } )
+  } )
+
+  it( 'durante una scelta di bersaglio il clic su una carta evidenziata risponde', async () => {
+    store.bersagli = ['B-7']
+    vista.decisione = { tipo: 'sceltaEffetto', giocatore: 'A', uid: 'A-C', cardId: 46, domanda: { tipo: 'bersaglio', testo: 't', uids: ['B-7'] } }
+    const w = mount( MatchTable )
+    await w.get( '[data-test="colonna-presente"] [data-uid="B-7"]' ).trigger( 'click' )
+    expect( store.invia ).toHaveBeenCalledWith( { tipo: 'rispondi', risposta: 'B-7' } )
+    vista.decisione = null
+    store.bersagli = []
   } )
 
   it( 'il registro mostra le voci', () => {

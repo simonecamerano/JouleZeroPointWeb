@@ -10,6 +10,7 @@ const props = defineProps<{
   evidenziata?: boolean
   attenuata?: boolean
   selezionata?: boolean
+  uid?: string
 }>()
 defineEmits<{ click: [] }>()
 const cards = useCardStore()
