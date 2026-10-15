@@ -98,7 +98,7 @@ function arrenditi() {
 </template>
 
 <style scoped>
-.pannello { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .5rem .8rem; background: #0b0e1add; border-radius: .5rem; }
+.pannello { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .5rem .8rem; background: #0b0e1add; border-radius: .5rem; margin-top: .3rem; }
 .pannello p { margin: 0; }
-.pannello__resa { margin-left: auto; opacity: .7; }
+.pannello__resa { margin-left: auto; padding: .45rem 1.1rem; font-size: .95rem; border: 1px solid #ff6b6b; color: #ffb3b3; background: transparent; border-radius: .4rem; }
 </style>

@@ -91,7 +91,10 @@ useHead({
 
     <main
       class="content-wrapper"
-      :class="{ 'content-wrapper--flush-top': route.path === '/' }"
+      :class="{
+        'content-wrapper--flush-top': route.path === '/',
+        'content-wrapper--tavolo': route.path.startsWith('/partita'),
+      }"
     >
       <RouterView />
     </main>
@@ -138,6 +141,12 @@ useHead({
 
 .content-wrapper--flush-top {
   padding-top: 0;
+}
+
+.content-wrapper--tavolo {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  align-items: stretch;
 }
 
 /* Background atmosphere (Joule ZP Matrix) */

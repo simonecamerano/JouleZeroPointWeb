@@ -25,7 +25,7 @@ const vista: Vista = {
     futuro: [{ uid: 'B-8', owner: 'B', coperta: true, cardId: null, segnalino: null, statoForzato: null, modifiche: [] }],
   },
   giocatori: { A: giocatore( 'A', [{ uid: 'A-1', cardId: 3, owner: 'A' }, { uid: 'A-2', cardId: 4, owner: 'A' }] ), B: giocatore( 'B', null ) },
-  stack: [], finestra: null, decisione: null, esito: null,
+  stack: [], finestra: null, decisione: null, esito: null, manuali: [], silenziate: [],
   log: [{ round: 2, testo: 'Giocatore A gioca Carta 1 nel Presente' }],
 }
 
@@ -33,7 +33,7 @@ const store = reactive( {
   agg: { codice: 'COD', statoTavolo: 'inCorso', ruolo: 'A', avversario: 'bob', scadenzaFinestra: null,
     mosse: [{ tipo: 'passaTurno' }, { tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }], vista } as Aggiornamento,
   vista, tocca: true, selezionata: null as string | null, errore: null as string | null, connesso: true,
-  colonneGiocabili: [] as string[], bersagli: [] as string[], anteprima: null,
+  colonneGiocabili: [] as string[], bersagli: [] as string[], anteprima: null as { cardId: number, uid: string | null } | null,
   mosseEffetto: ( uid: string ) => ( uid === 'A-5' ? [{ tipo: 'attivaEffetto', uid: 'A-5', indice: 0 }] : [] ),
   mostraAnteprima: vi.fn(),
   mosseDi: ( uid: string ) => ( uid === 'A-1' ? [{ tipo: 'giocaCarta', uid: 'A-1', colonna: 'presente' }] : [] ),
@@ -41,7 +41,7 @@ const store = reactive( {
 } )
 vi.mock( '../../stores/matchStore', () => ( { useMatchStore: () => store } ) )
 vi.mock( '../../stores/cardStore', () => ( {
-  useCardStore: () => ( { fetchCards: vi.fn(), getCardById: ( id: number ) => ( { id, name: `Carta ${id}`, image_url: `/img/${id}.png`, effect: '' } ) } ),
+  useCardStore: () => ( { fetchCards: vi.fn(), getCardById: ( id: number ) => ( { id, name: `Carta ${id}`, image_url: `/img/${id}.png`, effect: '', type: 'Solido', status: 'Freddo', cost_et: 3, pep: 1, rp: 5 } ) } ),
 } ) )
 
 import MatchTable from './MatchTable.vue'
@@ -115,6 +115,30 @@ describe( 'MatchTable', () => {
     expect( store.invia ).toHaveBeenCalledWith( { tipo: 'rispondi', risposta: 'B-7' } )
     vista.decisione = null
     store.bersagli = []
+  } )
+
+  it( "il passaggio del mouse su una carta chiede l'anteprima", async () => {
+    const w = mount( MatchTable )
+    await w.get( '[data-test="colonna-presente"] [data-uid="A-5"]' ).trigger( 'mouseenter' )
+    expect( store.mostraAnteprima ).toHaveBeenCalledWith( 1, 'A-5' )
+  } )
+
+  it( "l'anteprima mostra nome, PEP e RP correnti, stato e testo", async () => {
+    vista.colonne.presente[0].modifiche = [{ stat: 'pep', delta: 2, durata: 'collisione' }]
+    store.anteprima = { cardId: 1, uid: 'A-5' }
+    const w = mount( MatchTable )
+    const a = w.get( '[data-test="anteprima"]' )
+    expect( a.text() ).toContain( 'Carta 1' )
+    expect( a.get( '[data-test="anteprima-pep"]' ).text() ).toBe( '3' ) // 1 + 2
+    store.anteprima = null
+    vista.colonne.presente[0].modifiche = []
+  } )
+
+  it( 'la barra mostra il Supporto del Passato di entrambi', () => {
+    vista.giocatori.A.supportoPep = 1
+    const w = mount( MatchTable )
+    expect( w.get( '[data-test="supporto-mio"]' ).text() ).toContain( '+1 PEP' )
+    vista.giocatori.A.supportoPep = 0
   } )
 
   it( 'il registro mostra le voci', () => {

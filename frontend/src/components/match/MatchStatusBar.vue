@@ -22,6 +22,8 @@ const FASI: Record<string, string> = {
     <span>TP {{ v.tp > 0 ? '+' : '' }}{{ v.tp }}</span>
     <span>Tu: IT {{ io.it }} · ET {{ io.et }}/{{ io.etMax }}</span>
     <span>{{ match.agg!.avversario }}: IT {{ avv.it }} · ET {{ avv.et }}/{{ avv.etMax }}</span>
+    <span data-test="supporto-mio">Supporto: +{{ io.supportoPep }} PEP · +{{ io.supportoRp }} RP</span>
+    <span data-test="supporto-avversario">Avversario: +{{ avv.supportoPep }} PEP · +{{ avv.supportoRp }} RP</span>
     <span>{{ v.iniziativa === match.agg!.ruolo ? 'Hai l\'iniziativa' : 'Iniziativa all\'avversario' }}</span>
     <strong v-if="match.agg!.statoTavolo === 'pausa'" class="barra__pausa">Partita in pausa: avversario assente</strong>
     <strong v-else-if="match.tocca" class="barra__tocca">Tocca a te</strong>

@@ -39,5 +39,5 @@ function click( c: Carta ) {
 </template>
 
 <style scoped>
-.mano { display: flex; justify-content: center; gap: .4rem; padding: .5rem; --carta-l: 6.5rem; }
+.mano { display: flex; justify-content: center; gap: .4rem; padding: .5rem; --carta-l: clamp(4.2rem, 12vh, 6.5rem); }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCardStore } from '../../stores/cardStore'
+import { useMatchStore } from '../../stores/matchStore'
 
 const props = defineProps<{
   cardId: number | null
@@ -14,6 +15,7 @@ const props = defineProps<{
 }>()
 defineEmits<{ click: [] }>()
 const cards = useCardStore()
+const match = useMatchStore()
 const carta = computed( () => ( props.cardId === null ? null : cards.getCardById( props.cardId ) ?? null ) )
 // Il retro solo se la vista non rivela la carta: il proprietario riceve cardId anche per le sue carte coperte.
 const retro = computed( () => props.cardId === null )
@@ -25,7 +27,8 @@ const coperta = computed( () => !!props.coperta && props.cardId !== null )
     type="button"
     class="match-card"
     :class="{ piccola, evidenziata, attenuata, selezionata, coperta }"
-    :title="retro ? 'Carta coperta' : carta ? `${carta.name}\n${carta.effect}` : `Carta ${cardId}`"
+    @mouseenter="cardId !== null && match.mostraAnteprima( cardId, uid ?? null )"
+    @mouseleave="match.mostraAnteprima( null )"
     @click="$emit('click')"
   >
     <img v-if="retro" src="/Retro_Ufficiale.png" alt="Carta coperta" />
@@ -41,7 +44,6 @@ const coperta = computed( () => !!props.coperta && props.cardId !== null )
 .match-card { position: relative; width: var(--carta-l, 6.2rem); aspect-ratio: 2 / 3; padding: 0; border: 0; background: none; border-radius: .4rem; cursor: pointer; transition: transform .12s; }
 .match-card.piccola { --carta-l: 4.2rem; }
 .match-card img { width: 100%; height: 100%; object-fit: cover; border-radius: .4rem; }
-.match-card:hover { transform: scale(1.8); z-index: 20; }
 .match-card.attenuata { opacity: .4; }
 .match-card.evidenziata { box-shadow: 0 0 .6rem .15rem #ffd36b; }
 .match-card.selezionata { box-shadow: 0 0 .7rem .25rem #6bd3ff; transform: translateY(-.5rem); }

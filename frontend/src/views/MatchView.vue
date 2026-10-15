@@ -20,3 +20,7 @@ onBeforeUnmount( () => match.disconnetti() )
     <MatchLobby v-else :key="codice ?? 'nuova'" :codice="codice" />
   </main>
 </template>
+
+<style scoped>
+.match-view { width: 100%; }
+</style>

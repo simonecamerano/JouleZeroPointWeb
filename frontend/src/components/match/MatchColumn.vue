@@ -53,7 +53,7 @@ function gioca() {
 <style scoped>
 .colonna { display: grid; grid-template-rows: 1fr auto 1fr; background-size: 100% 100%; border-radius: .8rem; padding: .6rem .4rem; min-height: 0; }
 .colonna.destinazione { box-shadow: 0 0 1rem .3rem #ffd36b; cursor: pointer; }
-.colonna__meta { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: .3rem; --carta-l: 4.6rem; }
+.colonna__meta { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: .3rem; --carta-l: clamp(3rem, 7vh, 4.6rem); }
 .colonna__nome { text-align: center; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; opacity: .7; }
 .slot { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
 .slot__azione { font-size: .65rem; padding: .1rem .4rem; }

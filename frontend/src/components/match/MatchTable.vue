@@ -9,6 +9,7 @@ import MatchDecisionPanel from './MatchDecisionPanel.vue'
 import MatchHand from './MatchHand.vue'
 import MatchLog from './MatchLog.vue'
 import MatchManualPanel from './MatchManualPanel.vue'
+import MatchPreview from './MatchPreview.vue'
 import MatchPile from './MatchPile.vue'
 import MatchStatusBar from './MatchStatusBar.vue'
 import MatchThermometer from './MatchThermometer.vue'
@@ -96,13 +97,14 @@ function cartaCliccata( uid: string ) {
     <MatchLog class="tavolo__log" :voci="v.log" />
 
     <p class="tavolo__ruota">Ruota il dispositivo in orizzontale per giocare.</p>
+    <MatchPreview />
   </section>
 </template>
 
 <style scoped>
 .tavolo {
-  display: grid; gap: .5rem; padding: .5rem; min-height: 100vh;
-  grid-template-columns: 1fr 16rem; grid-template-rows: auto auto 1fr auto auto auto;
+  display: grid; gap: .5rem; padding: .5rem; height: calc(100dvh - 5.5rem); min-height: 36rem;
+  grid-template-columns: 1fr 16rem; grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
   grid-template-areas: 'barra barra' 'manoavv log' 'griglia log' 'stack log' 'pannello log' 'mano log';
   background: radial-gradient(ellipse at center, #10142a, #04050b);
 }
@@ -116,7 +118,7 @@ function cartaCliccata( uid: string ) {
 .tavolo__stack .mia :deep(img) { outline: 2px solid #4fd1c5; }
 .tavolo__log { grid-area: log; max-height: calc(100vh - 4rem); }
 .tavolo__griglia {
-  grid-area: griglia; display: grid; gap: .5rem; min-height: 32rem;
+  grid-area: griglia; display: grid; gap: .5rem; min-height: 0;
   grid-template-columns: auto auto auto 1fr 1fr 1fr auto auto;
   grid-template-rows: 1fr 1fr;
   grid-template-areas:
