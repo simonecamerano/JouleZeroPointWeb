@@ -29,6 +29,8 @@ export function creaPartita(o: {
     colonne: { passato: [], presente: [], futuro: [] },
     anomalia: null, giocatori: { A: giocatore('A'), B: giocatore('B') },
     stack: [], finestra: null, decisione: null, sconfitte: [], esito: null, carte, log: [],
+    eventi: [], coda: [], ritardati: [], usi: {}, silenziate: [], manuali: [], sconti: [],
+    collisione: null, sottofase: null, tpRiferimento: 0, segnoTP: 0, erroriEffetti: [],
   };
   for (const p of GIOCATORI) {
     const g = s.giocatori[p];

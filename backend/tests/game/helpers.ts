@@ -1,7 +1,10 @@
 import {
   Carta, CartaCampo, Colonna, DefCarta, Giocatore, PlayerId, StatoPartita, TipoCarta,
 } from '../../game/engine/types';
-import { Mazzo } from '../../game/engine/carte';
+import { Mazzo, daCardDb } from '../../game/engine/carte';
+import { applica, chiDeveAgire } from '../../game/engine';
+import { Azione } from '../../game/engine/types';
+import carteV6 from './fixtures/carte-v6.json';
 
 export function catalogoProva(): Record<number, DefCarta> {
   const c: Record<number, DefCarta> = {};
@@ -66,5 +69,53 @@ export function statoVuoto(): StatoPartita {
     anomalia: null, giocatori: { A: g('A'), B: g('B') },
     stack: [], finestra: null, decisione: null, sconfitte: [], esito: null,
     carte: catalogoProva(), log: [],
+    eventi: [], coda: [], ritardati: [], usi: {}, silenziate: [], manuali: [], sconti: [],
+    collisione: null, sottofase: null, tpRiferimento: 0, segnoTP: 0, erroriEffetti: [],
   };
+}
+
+/** Le 120 carte vere del set, dalla fixture esportata dal Mongo di prova. */
+export function catalogoReale(): Record<number, DefCarta> {
+  const out: Record<number, DefCarta> = {};
+  for (const c of carteV6) {
+    const d = daCardDb(c);
+    if (d) out[d.cardId] = d;
+  }
+  return out;
+}
+
+/** Stato vuoto con le carte vere; i Costruttori sono Chronos (254), che non ha dichiarazione nel 1C-a. */
+export function statoReale(): StatoPartita {
+  const s = statoVuoto();
+  s.carte = catalogoReale();
+  s.giocatori.A.costruttore.cardId = 254;
+  s.giocatori.B.costruttore.cardId = 254;
+  s.giocatori.A.et = 10;
+  s.giocatori.B.et = 10;
+  return s;
+}
+
+export function inMano(s: StatoPartita, p: PlayerId, cardId: number): string {
+  const c = carta(p, cardId);
+  s.giocatori[p].mano.push(c);
+  return c.uid;
+}
+
+export function riempiMazzi(s: StatoPartita, cardId = 1, n = 10): void {
+  for (const p of ['A', 'B'] as PlayerId[]) for (let i = 0; i < n; i++) s.giocatori[p].futuro.push(carta(p, cardId));
+}
+
+/** Applica una mossa e fallisce il test se il motore la rifiuta. */
+export function mossa(s: StatoPartita, p: PlayerId, a: Azione): StatoPartita {
+  const r = applica(s, p, a);
+  if (!r.ok) throw new Error(`${JSON.stringify(a)} rifiutata: ${r.errore}`);
+  return r.stato;
+}
+
+/** Gioca una carta e fa passare l'avversario nella finestra di risposta. */
+export function gioca(s: StatoPartita, p: PlayerId, uid: string, colonna?: Colonna): StatoPartita {
+  let t = mossa(s, p, { tipo: 'giocaCarta', uid, colonna });
+  const o: PlayerId = p === 'A' ? 'B' : 'A';
+  if (t.finestra && chiDeveAgire(t) === o) t = mossa(t, o, { tipo: 'passa' });
+  return t;
 }

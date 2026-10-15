@@ -39,6 +39,66 @@ export interface Modifica {
   durata: Durata;
 }
 
+/** Momenti in cui un effetto innescato può scattare. I "propri" riguardano la carta stessa dell'evento. */
+export type Momento =
+  | 'entraPresente' | 'entraPassato' | 'entraFuturo' | 'distrutta' | 'immediato'
+  | 'frammentoGiocato' | 'frammentoEntraPresente' | 'inizioRound' | 'inizioCollisione'
+  | 'danniDeterminati' | 'dannoIT' | 'fineCollisione' | 'fineRound' | 'inversione' | 'cambioSegnoTP';
+export const MOMENTI_PROPRI: Momento[] = ['entraPresente', 'entraPassato', 'entraFuturo', 'distrutta', 'immediato'];
+export type MomentoRitardato = 'inizioRound' | 'risorse' | 'fineCollisione' | 'fineRound';
+export type Origine = Colonna | 'mano';
+
+export interface EventoGioco {
+  momento: Momento;
+  /** Carta coinvolta: quella che entra, viene distrutta, viene giocata o si risolve. */
+  uid?: string;
+  cardId?: number;
+  owner?: PlayerId;
+  /** Ingressi: colonna o zona di provenienza. `distrutta`: colonna in cui stava. */
+  da?: Origine;
+  /** `frammentoGiocato`: colonna in cui è stato giocato. */
+  colonna?: Colonna;
+  /** `dannoIT`: chi subisce. `frammentoGiocato` e `frammentoEntraPresente`: di chi è il Frammento. `inversione`: chi la provoca. */
+  giocatore?: PlayerId;
+  valore?: number;
+  inCollisione?: boolean;
+}
+
+export type Domanda =
+  | { tipo: 'siNo'; testo: string }
+  | { tipo: 'bersaglio'; testo: string; uids: string[] }
+  | { tipo: 'opzione'; testo: string; opzioni: string[] };
+export type Risposta = boolean | string | number;
+
+/** Un effetto in coda. `scelte` sono le risposte già date, rigiocate a ogni ripresa. */
+export interface Pendente {
+  cardId: number;
+  indice: number;
+  sorgente: string;
+  controllore: PlayerId;
+  evento: EventoGioco;
+  scelte: Risposta[];
+  dati: Record<string, string | number>;
+}
+
+export interface Ritardato extends Pendente {
+  momento: MomentoRitardato;
+  nome: string;
+}
+
+export interface Sconto {
+  giocatore: PlayerId;
+  colonna: Colonna;
+  delta: number;
+}
+
+export interface CalcoloCollisione {
+  danno: Record<PlayerId, number>;
+  collasso: Record<PlayerId, boolean>;
+}
+
+export type Sottofase = null | 'danni' | 'chiusura' | 'fineRound';
+
 export interface CartaCampo extends Carta {
   coperta: boolean;
   segnalino: 'caldo' | 'freddo' | null;
@@ -83,7 +143,8 @@ export type Decisione =
   | { tipo: 'mulligan'; giocatore: PlayerId }
   | { tipo: 'bonusControllo'; giocatore: PlayerId }
   | { tipo: 'capienza'; giocatore: PlayerId; colonna: Colonna }
-  | { tipo: 'effettoManuale'; giocatore: PlayerId; uid: string; origine: 'stack' | 'libero' };
+  | { tipo: 'effettoManuale'; giocatore: PlayerId; uid: string; origine: 'stack' | 'libero' }
+  | { tipo: 'sceltaEffetto'; giocatore: PlayerId; uid: string; cardId: number; domanda: Domanda };
 
 export type MotivoFine = 'collasso' | 'sincronia' | 'collassoEntropico' | 'pareggio' | 'abbandono';
 export interface Esito {
@@ -116,6 +177,26 @@ export interface StatoPartita {
   esito: Esito | null;
   carte: Record<number, DefCarta>;
   log: VoceLog[];
+  /** Eventi emessi e non ancora trasformati in effetti. */
+  eventi: EventoGioco[];
+  /** Effetti in attesa; il primo è quello in corso (anche sospeso su una scelta). */
+  coda: Pendente[];
+  ritardati: Ritardato[];
+  /** Contatori "una volta per": chiave `uid:indice:round` o `uid:indice:collisione`. */
+  usi: Record<string, number>;
+  /** Carte senza effetti fino a fine Round (Deviazione Temporale). */
+  silenziate: string[];
+  /** cardId in ripiego manuale per il resto della partita. */
+  manuali: number[];
+  sconti: Sconto[];
+  collisione: CalcoloCollisione | null;
+  sottofase: Sottofase;
+  /** TP subito dopo l'ultimo Slittamento: riferimento di Blocco Termico. */
+  tpRiferimento: number;
+  /** Segno dell'ultima TP diversa da 0 (I9). */
+  segnoTP: -1 | 0 | 1;
+  /** Errori degli effetti, che il gestore delle partite stampa sul server e svuota. */
+  erroriEffetti: string[];
 }
 
 export type AzioneBase =
@@ -142,6 +223,8 @@ export type Azione =
   | { tipo: 'passa' }
   | { tipo: 'usaEffetto'; uid: string }
   | { tipo: 'base'; base: AzioneBase }
+  | { tipo: 'rispondi'; risposta: Risposta }
+  | { tipo: 'attivaEffetto'; uid: string; indice: number }
   | { tipo: 'fatto' };
 
 export type Risultato = { ok: true; stato: StatoPartita } | { ok: false; errore: string };

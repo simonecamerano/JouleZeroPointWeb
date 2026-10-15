@@ -53,6 +53,9 @@ export function fineRound(s: StatoPartita): void {
   for (const col of COLONNE) {
     for (const fc of s.colonne[col]) fc.modifiche = fc.modifiche.filter((m) => m.durata === 'permanente');
   }
+  for (const k of Object.keys(s.usi)) if (k.endsWith(':round')) delete s.usi[k];
+  s.silenziate = [];
+  s.sconti = [];
   s.iniziativa = altro(s.iniziativa);
   s.round += 1;
   log(s, `Inizia il round ${s.round}. Iniziativa a ${nomeG(s.iniziativa)}`);
