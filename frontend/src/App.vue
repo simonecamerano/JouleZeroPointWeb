@@ -144,6 +144,7 @@ useHead({
 }
 
 .content-wrapper--tavolo {
+  padding-top: 0.5rem; /* la navbar è in flusso: il tavolo sta sotto, senza i 5rem di compensazione */
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   align-items: stretch;
