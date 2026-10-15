@@ -36,7 +36,8 @@ function partitaCasuale(seed: number): StatoPartita {
   for (let passo = 0; passo < 3000 && !s.esito; passo++) {
     const p = chiDeveAgire(s);
     if (!p) throw new Error(`seed ${seed} passo ${passo}: nessuno deve agire ma la partita non è finita`);
-    const mosse = mosseLegali(s, p);
+    // Il pannello manuale non si simula: `usaEffetto` aprirebbe effetti a vuoto senza fine.
+    const mosse = mosseLegali(s, p).filter((m) => m.tipo !== 'usaEffetto');
     if (!mosse.length) throw new Error(`seed ${seed} passo ${passo}: nessuna mossa legale per ${p}`);
     const m = mosse[intero(r, mosse.length)];
     const res = applica(s, p, m);

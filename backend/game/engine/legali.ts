@@ -1,5 +1,6 @@
 import { contaInColonna, def, isFrammento } from './carte';
 import { costoPer, eventoGiocabile } from '../effetti/continui';
+import { mosseEffetti } from '../effetti/attivabili';
 import { risposteValide } from '../effetti/dispatcher';
 import { Azione, COLONNE, PlayerId, StatoPartita } from './types';
 
@@ -13,7 +14,8 @@ export function chiDeveAgire(s: StatoPartita): PlayerId | null {
 
 /**
  * Mosse disponibili per `p`. Le azioni base del pannello manuale non sono elencate:
- * hanno parametri liberi e le valida `applica`. `usaEffetto` non è elencata.
+ * hanno parametri liberi e le valida `applica`. `usaEffetto` è elencata solo per le carte senza
+ * dichiarazione o in ripiego.
  */
 export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
   if (chiDeveAgire(s) !== p) return [];
@@ -44,6 +46,7 @@ export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
       const dc = def(s, c.cardId);
       if (dc.tipo === 'Evento' && eventoGiocabile(s, p, dc) && costoPer(s, p, dc) <= g.et) out.push({ tipo: 'giocaCarta', uid: c.uid });
     }
+    out.push(...mosseEffetti(s, p, 'collisione'));
     return out;
   }
   out.push({ tipo: 'passaTurno' });
@@ -60,5 +63,6 @@ export function mosseLegali(s: StatoPartita, p: PlayerId): Azione[] {
     }
   }
   if (!g.scambioUsato) for (const c of g.mano) out.push({ tipo: 'scambio', uid: c.uid });
+  out.push(...mosseEffetti(s, p, 'azioni'));
   return out;
 }

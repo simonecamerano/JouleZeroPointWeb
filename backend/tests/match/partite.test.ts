@@ -184,7 +184,9 @@ describe('GestorePartite', () => {
       const turno = ag.find(([, a]) => a.mosse.length > 0);
       if (!turno) throw new Error(`passo ${passo}: nessuno ha mosse`);
       const [u, a] = turno;
-      const r = g.azione(codice, u, a.mosse[passo % a.mosse.length]);
+      // Il pannello manuale non si simula: `usaEffetto` aprirebbe effetti a vuoto senza fine.
+      const mosse = a.mosse.filter((m) => m.tipo !== 'usaEffetto');
+      const r = g.azione(codice, u, mosse[passo % mosse.length]);
       if (!r.ok) throw new Error(`passo ${passo}: ${r.errore}`);
     }
     expect(fine).toBe(true);

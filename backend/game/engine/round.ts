@@ -1,7 +1,8 @@
 import { accoda, azzeraUsi, eseguiProssimo, interrompiCatena, LIMITE_EFFETTI, scattaRitardati } from '../effetti/dispatcher';
 import { applicaCollisione, calcolaCollisione } from './collisione';
-import { emetti } from './eventi';
-import { cercaInCampo, contaInColonna, def } from './carte';
+import { emetti, emettiIngresso } from './eventi';
+import { haDichiarazione } from '../effetti/registro';
+import { cercaInCampo, contaInColonna, def, isFrammento } from './carte';
 import { log } from './log';
 import { eseguiRisorse, ordine } from './risorse';
 import { eseguiSlittamento } from './slittamento';
@@ -15,15 +16,37 @@ function trovaEccesso(s: StatoPartita): { giocatore: PlayerId; colonna: Colonna 
   return null;
 }
 
-/** Risolve la voce in cima allo stack: apre l'effetto manuale una volta, poi la toglie. */
+/**
+ * Risolve la voce in cima allo stack in due giri: il primo emette gli effetti della carta (o apre il pannello
+ * manuale se la carta non ha dichiarazione), il secondo, a effetti risolti, la toglie.
+ */
 function risolviCimaStack(s: StatoPartita): void {
   const v = s.stack[s.stack.length - 1];
   const d = def(s, v.carta.cardId);
-  const coperta = cercaInCampo(s, v.carta.uid)?.carta.coperta ?? false;
-  if (!v.annullata && !v.risolta && !coperta && d.effetto.trim()) {
+  if (!v.risolta) {
     v.risolta = true;
-    s.decisione = { tipo: 'effettoManuale', giocatore: v.controllore, uid: v.carta.uid, origine: 'stack' };
-    log(s, `Effetto di ${d.nome} da applicare: ${d.effetto}`);
+    if (v.annullata) return;
+    const t = cercaInCampo(s, v.carta.uid);
+    const automatica = haDichiarazione(s, d.cardId) && !s.manuali.includes(d.cardId);
+    const manuale = (): void => {
+      s.decisione = { tipo: 'effettoManuale', giocatore: v.controllore, uid: v.carta.uid, origine: 'stack' };
+      log(s, `Effetto di ${d.nome} da applicare: ${d.effetto}`);
+    };
+    if (isFrammento(d.tipo)) {
+      if (!t) return;
+      emetti(s, {
+        momento: 'frammentoGiocato', uid: v.carta.uid, cardId: d.cardId, owner: v.controllore,
+        giocatore: v.controllore, colonna: t.colonna,
+      });
+      emettiIngresso(s, t.carta, t.colonna, 'mano');
+      if (!automatica && !t.carta.coperta && d.effetto.trim()) manuale();
+      return;
+    }
+    if (d.tipo === 'Evento' && automatica) {
+      emetti(s, { momento: 'immediato', uid: v.carta.uid, cardId: d.cardId, owner: v.controllore });
+      return;
+    }
+    if (!automatica && d.effetto.trim()) manuale();
     return;
   }
   s.stack.pop();

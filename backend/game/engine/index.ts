@@ -1,6 +1,7 @@
 import { distruggi } from './campo';
 import { cercaInCampo } from './carte';
 import { giocaCarta, passa, passaTurno, scambio } from './azioni';
+import { attivaEffetto } from '../effetti/attivabili';
 import { rispondi } from '../effetti/dispatcher';
 import { chiDeveAgire } from './legali';
 import { log, nomeG } from './log';
@@ -53,6 +54,8 @@ function esegui(s: StatoPartita, p: PlayerId, a: Azione): string | null {
       return libero() ?? passa(s, p);
     case 'usaEffetto':
       return libero() ?? usaEffetto(s, p, a.uid);
+    case 'attivaEffetto':
+      return libero() ?? attivaEffetto(s, p, a.uid, a.indice);
     case 'base':
       if (d?.tipo !== 'effettoManuale') return 'Nessun effetto in corso';
       if (!a.base || typeof a.base !== 'object') return 'Azione base mancante';
