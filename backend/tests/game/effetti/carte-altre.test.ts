@@ -1,8 +1,8 @@
-import { mosseLegali, vista } from '../../../game/engine';
+import { mosseLegali, rispostaDefault, vista } from '../../../game/engine';
 import { avanza } from '../../../game/engine/round';
 import { inverti, ricalcolaTP } from '../../../game/engine/temperatura';
 import { carta as nuovaCarta, gioca, inCampo, inMano, mossa, riempiMazzi, statoReale } from '../helpers';
-import { StatoPartita } from '../../../game/engine/types';
+import { Domanda, StatoPartita } from '../../../game/engine/types';
 
 const domanda = (s: StatoPartita) => (s.decisione as { domanda: { uids?: string[]; opzioni?: string[] } }).domanda;
 
@@ -37,12 +37,29 @@ describe('Materia Oscura', () => {
     s.giocatori.A.futuro = [nuovaCarta('A', 8), nuovaCarta('A', 19), nuovaCarta('A', 1)];
     const uid = inMano(s, 'A', 203);
     s = gioca(s, 'A', uid, 'presente');
-    expect(domanda(s).opzioni).toEqual(['Sciame Termico', 'Nessuno']);
+    expect(domanda(s).opzioni).toEqual(['Nessuno', 'Sciame Termico']);
     expect(vista(s, 'B').decisione).toMatchObject({ domanda: null });
-    s = mossa(s, 'A', { tipo: 'rispondi', risposta: 0 });
+    s = mossa(s, 'A', { tipo: 'rispondi', risposta: 1 });
     const futuro = s.colonne.futuro.filter((x) => x.owner === 'A');
     expect(futuro.map((x) => [x.cardId, x.coperta])).toEqual([[8, true]]);
     expect(s.giocatori.A.futuro.map((c) => c.cardId)).toEqual([1, 19]);
+  });
+
+  test('203 Vuoto di Probabilità: la scelta compare anche senza Frammenti tra le prime 2 (nessuna informazione trapela)', () => {
+    let s = statoReale();
+    s.giocatori.A.futuro = [nuovaCarta('A', 19), nuovaCarta('A', 46)];
+    s = gioca(s, 'A', inMano(s, 'A', 203), 'presente');
+    expect(domanda(s).opzioni).toEqual(['Nessuno']);
+  });
+
+  test('203 Vuoto di Probabilità: il default della domanda è Nessuno', () => {
+    let s = statoReale();
+    s.giocatori.A.futuro = [nuovaCarta('A', 8), nuovaCarta('A', 19), nuovaCarta('A', 1)];
+    s = gioca(s, 'A', inMano(s, 'A', 203), 'presente');
+    const r = rispostaDefault((s.decisione as { domanda: Domanda }).domanda);
+    s = mossa(s, 'A', { tipo: 'rispondi', risposta: r });
+    expect(s.colonne.futuro.filter((x) => x.owner === 'A')).toHaveLength(0);
+    expect(s.giocatori.A.futuro.map((c) => c.cardId)).toEqual([1, 8, 19]);
   });
 });
 
@@ -107,6 +124,18 @@ describe('Anomalie', () => {
     expect(s.finestra?.contesto).toBe('collisione');
   });
 
+  test('93 Faglia Temporale: con TP 0 niente Inversione e niente perdita di IT', () => {
+    const s = statoReale();
+    s.anomalia = nuovaCarta('A', 93);
+    ricalcolaTP(s);
+    expect(s.tp).toBe(0);
+    s.giocatori.A.haPassato = true;
+    s.giocatori.B.haPassato = true;
+    avanza(s);
+    expect(s.flusso).not.toBe('invertito');
+    expect(s.giocatori.A.it).toBe(20);
+  });
+
   test('173 Accumulo Critico: controlli il Presente a fine Collisione, +1 ET nel prossimo Round', () => {
     const s = statoReale();
     riempiMazzi(s);
@@ -156,5 +185,16 @@ describe('Costruttori', () => {
     expect(s.colonne.futuro.map((x) => x.uid)).toContain(fc.uid);
     expect(s.giocatori.A.it).toBe(19);
     expect(mosseLegali(s, 'A').some((m) => m.tipo === 'attivaEffetto')).toBe(false);
+  });
+
+  test('259 Khepri: il Nucleo di Basalto in Passato si sposta (il divieto vale solo nel Presente)', () => {
+    let s = statoReale();
+    s.giocatori.A.costruttore.cardId = 259;
+    const nucleo = inCampo(s, 'A', 1, 'passato');
+    s = mossa(s, 'A', { tipo: 'attivaEffetto', uid: 'A-C', indice: 0 });
+    expect(domanda(s).uids).toEqual([nucleo.uid]);
+    s = mossa(s, 'A', { tipo: 'rispondi', risposta: nucleo.uid });
+    expect(s.colonne.futuro.map((x) => x.uid)).toContain(nucleo.uid);
+    expect(s.giocatori.A.it).toBe(19);
   });
 });

@@ -15,14 +15,14 @@ export function vuotoDiProbabilita(c: Ctx): void {
   if (!prime.length) return;
   log(c.s, `${nomeFonte(c)}: guardi ${prime.map((x) => def(c.s, x.cardId).nome).join(' e ')}`, c.controllore);
   const frammenti = prime.filter((x) => isFrammento(def(c.s, x.cardId).tipo));
+  // Si chiede sempre, con 'Nessuno' come default (opzione 0): l'avversario non deve dedurre se c'era un Frammento.
   let scelta: Carta | null = null;
-  if (frammenti.length && contaInColonna(c.s, 'futuro', c.controllore) < 4) {
-    const r = c.chiedi({
-      tipo: 'opzione', testo: `${nomeFonte(c)}: metti un Frammento nel tuo Futuro coperto?`,
-      opzioni: [...frammenti.map((x) => def(c.s, x.cardId).nome), 'Nessuno'],
-    });
-    if (typeof r === 'number' && r < frammenti.length) scelta = frammenti[r];
-  }
+  const candidati = contaInColonna(c.s, 'futuro', c.controllore) < 4 ? frammenti : [];
+  const r = c.chiedi({
+    tipo: 'opzione', testo: `${nomeFonte(c)}: metti un Frammento nel tuo Futuro coperto?`,
+    opzioni: ['Nessuno', ...candidati.map((x) => def(c.s, x.cardId).nome)],
+  });
+  if (typeof r === 'number' && r >= 1 && r <= candidati.length) scelta = candidati[r - 1];
   g.futuro.splice(0, prime.length);
   const resto = prime.filter((x) => x !== scelta);
   g.futuro.push(...resto);

@@ -364,12 +364,14 @@ export const coperteAvversarieNelFuturo: Sel = {
   f: (c) => c.s.colonne.futuro.filter((x) => x.coperta && x.owner !== c.controllore).map((x) => x.uid),
 };
 export const tuoiFrammentiScambiabili: Sel = {
-  d: 'un tuo Frammento nel Passato o nel Futuro, con posto nella colonna opposta',
+  d: 'un tuo Frammento spostabile nel Passato o nel Futuro, con posto nella colonna opposta',
   f: (c) => {
     const out: string[] = [];
     for (const [da, a] of [['passato', 'futuro'], ['futuro', 'passato']] as const) {
       if (contaInColonna(c.s, a, c.controllore) < 4) {
-        out.push(...c.s.colonne[da].filter((x) => x.owner === c.controllore).map((x) => x.uid));
+        out.push(...c.s.colonne[da]
+          .filter((x) => x.owner === c.controllore && !vietato(c.s, { tipo: 'sposta', uid: x.uid }))
+          .map((x) => x.uid));
       }
     }
     return out;
