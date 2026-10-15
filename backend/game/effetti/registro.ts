@@ -1,7 +1,11 @@
 // Registro delle dichiarazioni: cardId → effetti. Le carte si aggiungono con `registra` dai file in `carte/`.
 import { StatoPartita } from '../engine/types';
+import { ANOMALIE } from './carte/anomalie';
+import { COSTRUTTORI } from './carte/costruttori';
+import { EVENTI } from './carte/eventi';
 import { GAS } from './carte/gas';
 import { LIQUIDI } from './carte/liquidi';
+import { MATERIA_OSCURA } from './carte/materiaOscura';
 import { PLASMA } from './carte/plasma';
 import { SOLIDI } from './carte/solidi';
 import { DefEffetto, DichiarazioneCarta } from './dsl';
@@ -10,7 +14,7 @@ const registro = new Map<number, DichiarazioneCarta>();
 
 // File delle carte: funzioni che restituiscono le dichiarazioni. Il Task 8 e il Task 9 le aggiungono qui.
 // Anche l'elenco è una funzione: letto al caricamento potrebbe trovare un import ancora a metà.
-const fonti = (): (() => DichiarazioneCarta[])[] => [SOLIDI, LIQUIDI, GAS, PLASMA];
+const fonti = (): (() => DichiarazioneCarta[])[] => [SOLIDI, LIQUIDI, GAS, PLASMA, MATERIA_OSCURA, EVENTI, ANOMALIE, COSTRUTTORI];
 let caricato = false;
 
 /**
