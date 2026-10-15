@@ -12,6 +12,7 @@
     "test:ai": "jest tests/ai_integrity.test.js --detectOpenHandles",
     "start": "node dist/index.js",
     "dev": "nodemon --watch './**/*.ts' --ext 'ts,json' --exec 'ts-node' index.ts",
+    "effetti:riepilogo": "ts-node scripts/riepilogoEffetti.ts",
     "build": "tsc && mkdir -p dist/config && cp config/*.json dist/config/ && cp -r public dist/ || true"
   },
   "keywords": [],

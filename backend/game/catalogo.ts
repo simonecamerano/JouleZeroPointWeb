@@ -1,13 +1,16 @@
 import { createHash } from 'crypto';
 import { daCardDb, DefCarta, Mazzo } from './engine';
 import { getCachedCards } from '../services/cardService';
-import cardScripts from './cardScripts.json';
+import { carteDichiarate, dichiarazioneRegistrata } from './effetti/registro';
 
 export const VERSIONE_REGOLAMENTO = '6.0';
 
-// Import come modulo JSON (non readFileSync): tsc lo copia in dist/ e il backend parte anche in produzione.
+// Hash delle dichiarazioni degli effetti: cambia a ogni modifica di uno script, finisce nel log della partita.
 export const VERSIONE_SCRIPT = createHash('sha256')
-  .update(JSON.stringify(cardScripts))
+  .update(JSON.stringify(carteDichiarate().map((id) => {
+    const d = dichiarazioneRegistrata(id)!;
+    return [id, d.nome, d.effetti.map((e) => e.testo)];
+  })))
   .digest('hex')
   .slice(0, 12);
 

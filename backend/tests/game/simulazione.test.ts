@@ -1,8 +1,9 @@
 import { applica, chiDeveAgire, creaPartita, mosseLegali, verificaInvarianti, vista } from '../../game/engine';
 import { intero } from '../../game/engine/rng';
-import { PlayerId, StatoPartita } from '../../game/engine/types';
+import { LIMITE_COPIE, Mazzo } from '../../game/engine/carte';
+import { DefCarta, PlayerId, StatoPartita } from '../../game/engine/types';
 import { Vista } from '../../game/engine/vista';
-import { catalogoProva, mazzoProva } from './helpers';
+import { catalogoProva, catalogoReale, mazzoProva } from './helpers';
 
 /**
  * Registra in `visti` ogni uid che il giocatore ha visto con un cardId, poi controlla che nessuna carta
@@ -32,8 +33,11 @@ function controllaVista(v: Vista, visti: Map<string, number>): string | null {
   return null;
 }
 
-function partitaCasuale(seed: number): StatoPartita {
-  let s = creaPartita({ seed, mazzi: { A: mazzoProva(), B: mazzoProva() }, catalogo: catalogoProva() });
+function partitaCasuale(
+  seed: number,
+  o: { catalogo: Record<number, DefCarta>; mazzi: Record<PlayerId, Mazzo> } = { catalogo: catalogoProva(), mazzi: { A: mazzoProva(), B: mazzoProva() } },
+): StatoPartita {
+  let s = creaPartita({ seed, mazzi: o.mazzi, catalogo: o.catalogo });
   const r = { rng: seed * 7919 };
   const visti: Record<PlayerId, Map<string, number>> = { A: new Map(), B: new Map() };
   for (let passo = 0; passo < 3000 && !s.esito; passo++) {
@@ -69,4 +73,32 @@ describe('partite simulate', () => {
   test('la stessa sequenza di seed produce la stessa partita', () => {
     expect(partitaCasuale(42)).toEqual(partitaCasuale(42));
   });
+});
+
+const PILOTA = [93, 46, 67, 138, 231, 1, 2, 20, 50, 6, 103, 223, 8, 30, 79, 15, 119, 203, 19, 127, 173];
+
+function mazzoPilota(cat: Record<number, DefCarta>, ordineCarte: number[], costruttore: number): Mazzo {
+  const carte: number[] = [];
+  for (const id of ordineCarte) {
+    const n = LIMITE_COPIE[cat[id].rarita] ?? 3;
+    for (let i = 0; i < n && carte.length < 40; i++) carte.push(id);
+  }
+  return { carte, costruttore };
+}
+
+describe('partite simulate con le carte pilota', () => {
+  test('50 partite: nessun blocco, nessuna fuga, nessun effetto in ripiego', () => {
+    const catalogo = catalogoReale();
+    const mazzi = {
+      A: mazzoPilota(catalogo, PILOTA, 255),
+      B: mazzoPilota(catalogo, [...PILOTA].reverse(), 259),
+    };
+    let finite = 0;
+    for (let seed = 1; seed <= 50; seed++) {
+      const s = partitaCasuale(seed, { catalogo, mazzi });
+      expect([seed, s.manuali, s.erroriEffetti]).toEqual([seed, [], []]);
+      if (s.esito) finite += 1;
+    }
+    expect(finite).toBeGreaterThanOrEqual(25);
+  }, 300_000);
 });
